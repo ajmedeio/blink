@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c4834e6077abe64e968f9f87c9ac70a, type: 3}
+  m_Name: ChallengerBoots
+  m_EditorClassIdentifier: 
+  overlayName: FR_MC_Boots
+  rect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  textureList:
+  - {fileID: 2800000, guid: e55cb2bd595db994e92914d0cf62859f, type: 3}
+  - {fileID: 2800000, guid: 8ecdee3a22d6d3644a53d952b208aa1e, type: 3}
+  - {fileID: 2800000, guid: 0a6ad317e59278e48a35a17c5c8bc3f2, type: 3}
+  tags: []
+  material: {fileID: 11400000, guid: f8056fcbdcb20c64f8c37d99148bfe6a, type: 2}
