@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class HeroAnimator : MonoBehaviour {
+public class HeroAnimator : NetworkBehaviour {
 
 	public static readonly string Idle = "Idle";
 	public static readonly string Run = "Run";
@@ -37,41 +38,33 @@ public class HeroAnimator : MonoBehaviour {
 		abilitiesLayer.Add (AbilitySpell1H);
 	}
 
-	void Update() {
-	}
-
-	public void AnimateAbility(Hero h, HeroAvatar a, string animatorKey) {
+	public void AnimateAbility(Hero h, Transform avatar, string animatorKey) {
 		animator.Play (animatorKey);
 	}
 
-	public void AnimateMovement(Hero h, HeroAvatar a) {
-		string animation = "Idle";
+	public void AnimateMovement(Hero h, Transform avatar) {
+		string animation = Idle;
 
 		if (h.xzMovement != Vector3.zero) {
-			if (h.xMove) {
-				animation = "Run";
-			}
+			if (h.xMove) animation = Run;
 			if (h.zMove) {
 				if (h.zMotion > 0)
-					if (h.isWalking) animation = "Walk";
-					else animation = "Run";
-				else animation = "BackPedal";
+					if (h.isWalking) animation = Walk;
+					else animation = Run;
+				else animation = BackPedal;
 			}
 
-			if (h.zMotion < 0)
-				a.transform.rotation = Quaternion.Slerp (a.transform.rotation, Quaternion.LookRotation (new Vector3(-h.xzMovement.x, 0.0f, -h.xzMovement.z)), 0.45f);
-			else
-				a.transform.rotation = Quaternion.Slerp (a.transform.rotation, Quaternion.LookRotation (new Vector3(h.xzMovement.x, 0.0f, h.xzMovement.z)), 0.45f);
+			if (h.zMotion < 0) avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (new Vector3(-h.xzMovement.x, 0.0f, -h.xzMovement.z)), 0.65f);
+			else avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (new Vector3(h.xzMovement.x, 0.0f, h.xzMovement.z)), 0.65f);
 		} else {
-			a.transform.rotation = Quaternion.Slerp (a.transform.rotation, Quaternion.LookRotation (h.transform.forward), 0.85f);
+			avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (h.transform.forward), 1f);
 		}
 
 		if (!h.isGrounded) {
-			if (h.yMovement.y > 0) animation = "Fall";
-			else animation = "Fall";
+			if (h.yMovement.y > 0) animation = Fall;
+			else animation = Fall;
 		}
 
-		print (animation);
 		if (lastAnimation != animation) {
 			animator.SetBool (animation, true);
 			FalsifyOthers (animation);

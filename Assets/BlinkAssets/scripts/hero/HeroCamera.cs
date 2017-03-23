@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class HeroCamera : MonoBehaviour {
+public class HeroCamera : NetworkBehaviour {
 
 	public float targetHeight = 0.5f;
 	public float distance = 2.8f;
@@ -18,12 +19,15 @@ public class HeroCamera : MonoBehaviour {
 	public float y = 0.0f;
 
 	public Hero hero;
-	private Transform target;
+	private Transform heroTransform;
+	private Transform cameraTransform;
 
 	// Use this for initialization
 	void Start () {
-		hero = GameObject.FindWithTag ("Hero").GetComponent<Hero> ();
-		target = hero.transform;
+		cameraTransform = GetComponentInChildren<Camera>(true).transform;
+		if (isLocalPlayer) cameraTransform.gameObject.SetActive (true);
+		hero = GetComponentInParent<Hero> ();
+		heroTransform = hero.transform;
 		x = transform.eulerAngles.y;
 		y = transform.eulerAngles.x;
 
@@ -34,7 +38,8 @@ public class HeroCamera : MonoBehaviour {
 
 	// Update is called once per frame
 	void LateUpdate () {
-		
+		if (!hasAuthority) return;
+
 		// If either mouse buttons are down, let them govern camera position 
 		if (hero.changeCameraAngle || hero.changeHeroAngle) {
 			x += Input.GetAxis("Mouse X") * xSpeed * 0.02f;
@@ -52,25 +57,25 @@ public class HeroCamera : MonoBehaviour {
 
 		// Rotate camera
 		Quaternion rotation = Quaternion.Euler(y, x, 0);
-		transform.rotation = rotation;
+		cameraTransform.rotation = rotation;
 
 		// Position camera
 		Vector3 minTargetHeight = new Vector3 (0, -targetHeight, 0);
-		Vector3 position = target.position - (rotation * Vector3.forward * distance + minTargetHeight);
-		transform.position = position;
+		Vector3 position = heroTransform.position - (rotation * Vector3.forward * distance + minTargetHeight);
+		cameraTransform.position = position;
 
 		// Is view blocked?
 		RaycastHit hit;
-		Vector3 trueTargetPosition = target.transform.position - minTargetHeight;
+		Vector3 trueTargetPosition = heroTransform.transform.position - minTargetHeight;
 
 		// Cast the line to check if camera is in front of an object, shorten distance if so:
-		if (Physics.Linecast (trueTargetPosition, transform.position, out hit)) {
+		if (Physics.Linecast (trueTargetPosition, cameraTransform.position, out hit)) {
 			if (hit.collider != hero.characterController) {
 				float tempDistance = Vector3.Distance (trueTargetPosition, hit.point) - 0.28f;
 
 				// Finally, reposition the camera:
-				position = target.position - (rotation * Vector3.forward * tempDistance + minTargetHeight);
-				transform.position = position;
+				position = heroTransform.position - (rotation * Vector3.forward * tempDistance + minTargetHeight);
+				cameraTransform.position = position;
 			}
 		}
 

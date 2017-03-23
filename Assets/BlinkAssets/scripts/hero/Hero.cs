@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class Hero : MonoBehaviour, IObserver {
+public class Hero : NetworkBehaviour, IObserver {
 
 	// Movement Variables
 	public bool isWalking = false;
@@ -25,7 +26,7 @@ public class Hero : MonoBehaviour, IObserver {
 	// Complex objects which a hero posseses
 	public IObservable controller;
 	public HeroHud heroHud;
-	public HeroCamera heroCamera;
+	public Transform heroCameraTransform;
 	public HeroAvatar heroAvatar;
 	public CharacterController characterController;
 
@@ -59,9 +60,9 @@ public class Hero : MonoBehaviour, IObserver {
 
 		controller = GetComponent<Controller> ();
 		heroHud = GetComponent<HeroHud> ();
-		heroCamera = GameObject.FindWithTag ("HeroCamera").GetComponent<HeroCamera> ();
-		heroAvatar = GameObject.FindWithTag ("HeroAvatar").GetComponent<HeroAvatar> ();
+		heroAvatar = GetComponent<HeroAvatar> ();
 		characterController = GetComponent<CharacterController>();
+		heroCameraTransform = GetComponentInChildren<Camera>(true).transform;
 
 		heroActionMap = new Dictionary<Action, VoidFunc> {
 			{HeroAction.MinusX, MinusX},
@@ -116,7 +117,7 @@ public class Hero : MonoBehaviour, IObserver {
 	}
 
 	private void DoActions() {
-
+		if (!hasAuthority) return;
 		// figure out the direction we're going to move including rotations
 		xMotion = 0;
 		if (minusX) xMotion -= 1;
@@ -154,7 +155,7 @@ public class Hero : MonoBehaviour, IObserver {
 			
 		if (isGrounded && plusY) yMovement += jump;
 
-		if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, heroCamera.transform.eulerAngles.y, 0);
+		if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, heroCameraTransform.eulerAngles.y, 0);
 		else transform.Rotate (0, yRotation * rotateSpeed * Time.deltaTime, 0);
 
 		//Move the avatar

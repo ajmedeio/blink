@@ -1,9 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UMA;
 
-public class HeroAvatar : MonoBehaviour {
+public class HeroAvatar : NetworkBehaviour {
 
 	public SlotLibrary slotLibrary;
 	public OverlayLibrary overlayLibrary;
@@ -18,8 +19,9 @@ public class HeroAvatar : MonoBehaviour {
 
 	private int numSlots = 20;
 
-	[Range (0.0f,1.0f)]
-	public float bodyMass = 0.5f;
+	// the avatar
+	private GameObject avatar;
+	[Range (0.0f,1.0f)] public float bodyMass = 0.5f;
 
 	void Start() {
 		heroAnimator = GetComponent<HeroAnimator> ();
@@ -35,6 +37,7 @@ public class HeroAvatar : MonoBehaviour {
 	}
 
 	void Update() {
+		if (!hasAuthority) return;
 		if (bodyMass != umaDna.upperMuscle) {
 			SetBodyMass (bodyMass);
 			umaData.isShapeDirty = true;
@@ -43,7 +46,7 @@ public class HeroAvatar : MonoBehaviour {
 	}
 
 	void InitializeUma() {
-		GameObject avatar = new GameObject ("Avatar");
+		avatar = new GameObject ("Avatar");
 		umaDynamicAvatar = avatar.AddComponent<UMADynamicAvatar> ();
 
 		umaDynamicAvatar.Initialize ();
@@ -65,7 +68,7 @@ public class HeroAvatar : MonoBehaviour {
 		umaDynamicAvatar.UpdateNewRace ();
 
 		avatar.transform.SetParent (this.transform);
-		avatar.transform.localPosition = Vector3.zero;
+		avatar.transform.localPosition = new Vector3 (0f, -1f, 0f);
 		avatar.transform.localRotation = Quaternion.identity;
 	}
 
@@ -104,32 +107,25 @@ public class HeroAvatar : MonoBehaviour {
 		AddOverlay (10, "FR_MC_Gloves");
 	}
 
-	public void AnimateAbility(Hero h, string animatorKey) {
+	private Animator GrabAnimatorFromUma() {
 		if (heroAnimator.animator == null) {
-			if (transform.childCount > 0) {
-
-				heroAnimator.animator = transform.GetChild (0).GetComponent (typeof(Animator)) as Animator;
-				if (heroAnimator.animator != null) {
-					heroAnimator.animator.applyRootMotion = false;
-				}
+			Debug.Log ("HeroAvatar.cs:GrabAnimatorFromUma:heroAnimator.animator is still null");
+			heroAnimator.animator = transform.GetComponentInChildren<Animator> ();
+			if (heroAnimator.animator != null) {
+				heroAnimator.animator.applyRootMotion = false;
 			}
-			return;
 		}
-		heroAnimator.AnimateAbility (h, this, animatorKey);
+		return heroAnimator.animator;
+	}
+
+	public void AnimateAbility(Hero h, string animatorKey) {
+		if (GrabAnimatorFromUma () == null) return;
+		heroAnimator.AnimateAbility (h, avatar.transform, animatorKey);
 	}
 
 	public void AnimateMovement(Hero h) {
-		if (heroAnimator.animator == null) {
-			if (transform.childCount > 0) {
-				
-				heroAnimator.animator = transform.GetChild (0).GetComponent (typeof(Animator)) as Animator;
-				if (heroAnimator.animator != null) {
-					heroAnimator.animator.applyRootMotion = false;
-				}
-			}
-			return;
-		}
-		heroAnimator.AnimateMovement (h, this);
+		if (GrabAnimatorFromUma () == null) return;
+		heroAnimator.AnimateMovement (h, avatar.transform);
 	}
 
 	void SetBodyMass(float mass) {

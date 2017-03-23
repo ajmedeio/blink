@@ -21,7 +21,6 @@ public class Blink : Ability {
 		Vector3 translation = new Vector3(0.0f, 0.0f, 2.5f);
 		translation = hero.transform.TransformDirection (translation);
 
-
 		// Cast the line to check if camera is in front of an object, shorten distance if so:
 		if (Physics.Linecast (start, start + translation, out hit)) {
 			// if the cast hits then it traveled the length of the radius of the capsulecollider
@@ -30,10 +29,8 @@ public class Blink : Ability {
 			translation = start + translation - hit.point;
 		}
 
-
 		hero.transform.position += translation;
 		Debug.Log (translation);
 		hero.heroAvatar.AnimateAbility (hero, HeroAnimator.AbilitySpell1H);
 	}
 }
-
