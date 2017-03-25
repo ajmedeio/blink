@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UMA;
+using System;
 
 public class HeroAnimator : NetworkBehaviour {
 
@@ -15,35 +17,39 @@ public class HeroAnimator : NetworkBehaviour {
 	public static readonly string Death = "Death";
 	public static readonly string AbilitySpell1H = "AbilitySpell1H";
 
-	public HashSet<string> movementLayer;
-	public HashSet<string> abilitiesLayer;
+	public HashSet<string> movementLayer = new HashSet<string> () {Idle, Run, Jump, BackPedal, Fall, Walk, Stunned, Death};
+	public HashSet<string> abilitiesLayer = new HashSet<string> () {AbilitySpell1H};
 
+	public NetAnimator netAnimator;
 	public Animator animator;
-	public RuntimeAnimatorController runtimeAnimatorController;
+	public RuntimeAnimatorController runtimeAnimatorController; // initialized inside UnityEditor
 	private string lastAnimation = "";
 
 	void Start() {
-		movementLayer = new HashSet<string> ();
-		abilitiesLayer = new HashSet<string> ();
-
-		movementLayer.Add (Idle);
-		movementLayer.Add (Run);
-		movementLayer.Add (Jump);
-		movementLayer.Add (BackPedal);
-		movementLayer.Add (Fall);
-		movementLayer.Add (Walk);
-		movementLayer.Add (Stunned);
-		movementLayer.Add (Death);
-
-		abilitiesLayer.Add (AbilitySpell1H);
+		
 	}
 
-	public void AnimateAbility(Hero h, Transform avatar, string animatorKey) {
+	public void OnUmaAnimatorCreated(Animator umaAnimator) {
+		print ("inside HeroAnimator.cs:SetupAnimator(animator)");
+		animator = umaAnimator;
+		animator.applyRootMotion = false;
+		netAnimator = gameObject.AddComponent<NetAnimator> ();
+		netAnimator.animator = umaAnimator;
+
+		// We shouldn't even use events, we're only registering ourselves for a single response.
+		// We just need a map from NetworkId to OnUmaAnimatorCreated callback. When the animator is created, send the notification
+		// to the proper client.
+		// TODO Send command to server to remove this from OnUmaAnimatorSetup UMAGeneratorBase.OnUmaAnimatorCreated -= OnUmaAnimatorCreated;
+	}
+
+	public void AnimateAbility(HeroManager hero, Transform avatar, string animatorKey) {
+		if (animator == null) return;
 		animator.Play (animatorKey);
 	}
 
-	public void AnimateMovement(Hero h, Transform avatar) {
+	public void AnimateMovement(HeroManager hero, Transform avatar) {
 		string animation = Idle;
+		HeroMovement h = hero.heroMovement;
 
 		if (h.xzMovement != Vector3.zero) {
 			if (h.xMove) animation = Run;
@@ -66,12 +72,14 @@ public class HeroAnimator : NetworkBehaviour {
 		}
 
 		if (lastAnimation != animation) {
+			if (animator == null) return;
 			animator.SetBool (animation, true);
 			FalsifyOthers (animation);
 		}
 	}
 
 	void FalsifyOthers(string truth) {
+		if (animator == null) return;
 		foreach (string par in movementLayer) {
 			if (truth != par) {
 				animator.SetBool (par, false);

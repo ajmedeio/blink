@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Hero : NetworkBehaviour, IObserver {
+public class HeroMovement : NetworkBehaviour, IObserver {
 
 	// Movement Variables
 	public bool isWalking = false;
@@ -16,7 +16,7 @@ public class Hero : NetworkBehaviour, IObserver {
 	public float runSpeed = 5.0f;
 	public float backPedalSpeed = 3.0f;
 	public float walkSpeed = 1.7f;
-	public float inAirSpeed = 1.0f;
+	public float inAirSpeed = 3.0f;
 	public float xzMoveSpeed = 5.0f;
 
 	public Vector3 yMovement = Vector3.zero;
@@ -24,11 +24,10 @@ public class Hero : NetworkBehaviour, IObserver {
 	public Vector3 lastXzMove = Vector3.zero;
 
 	// Complex objects which a hero posseses
-	public IObservable controller;
-	public HeroHud heroHud;
 	public Transform heroCameraTransform;
 	public HeroAvatar heroAvatar;
 	public CharacterController characterController;
+	public HeroManager heroManager;
 
 	// per frame state variables, these values will change pretty much every frame 
 	// and indicate which actions were sent to the hero in Notify.
@@ -49,38 +48,34 @@ public class Hero : NetworkBehaviour, IObserver {
 	public short xMotion; 					// left = -1, right = 1, left && right = 0
 	public short zMotion; 					// back = -1, forward = 1, back && forward = 0
 	public short yRotation;					// left = -1, right = 1, left && right = 0
-	public Ability ability;
 
 	private delegate void VoidFunc();
-	private Dictionary<Action, VoidFunc> heroActionMap;
+	private Dictionary<MovementAction, VoidFunc> heroActionMap;
 
 	void Start () {
+		resetMovement ();
 
-		resetActions ();
-
-		controller = GetComponent<Controller> ();
-		heroHud = GetComponent<HeroHud> ();
 		heroAvatar = GetComponent<HeroAvatar> ();
 		characterController = GetComponent<CharacterController>();
 		heroCameraTransform = GetComponentInChildren<Camera>(true).transform;
+		heroManager = GetComponent<HeroManager> ();
 
-		heroActionMap = new Dictionary<Action, VoidFunc> {
-			{HeroAction.MinusX, MinusX},
-			{HeroAction.MinusY, MinusY},
-			{HeroAction.MinusZ, MinusZ},
-			{HeroAction.PlusX, PlusX},
-			{HeroAction.PlusY, PlusY},
-			{HeroAction.PlusZ, PlusZ},
-			{HeroAction.MinusYRotate, MinusYRotate},
-			{HeroAction.PlusYRotate, PlusYRotate},
-			{HeroAction.ChangeCameraAngle, ChangeCameraAngle},
-			{HeroAction.ChangeHeroAngle, ChangeHeroAngle},
-			{HeroAction.ToggleRunWalk, ToggleRunWalk},
-			{GuiAction.ToggleTyping, heroHud.ToggleTyping}
+		heroActionMap = new Dictionary<MovementAction, VoidFunc> {
+			{MovementAction.MinusX, MinusX},
+			{MovementAction.MinusY, MinusY},
+			{MovementAction.MinusZ, MinusZ},
+			{MovementAction.PlusX, PlusX},
+			{MovementAction.PlusY, PlusY},
+			{MovementAction.PlusZ, PlusZ},
+			{MovementAction.MinusYRotate, MinusYRotate},
+			{MovementAction.PlusYRotate, PlusYRotate},
+			{MovementAction.ChangeCameraAngle, ChangeCameraAngle},
+			{MovementAction.ChangeHeroAngle, ChangeHeroAngle},
+			{MovementAction.ToggleRunWalk, ToggleRunWalk}
 		};
 	}
 
-	public void resetActions() {
+	public void resetMovement() {
 		minusX = false;
 		minusY = false;
 		minusZ = false;
@@ -100,24 +95,20 @@ public class Hero : NetworkBehaviour, IObserver {
 		xMotion = 0;
 		zMotion = 0;
 		yRotation = 0;
-		ability = null;
 	}
 
 	// msg is usually an Action object
 	void IObserver.Notify(IObservable controller, object msg) {
-		HashSet<Action> heroActions = msg as HashSet<Action>;
-		if (heroActions != null) {
-			foreach (Action ha in heroActions) {
-				Ability a = ha as Ability;
-				if (a != null) ability = a;
-				else heroActionMap [ha] ();
+		HashSet<MovementAction> actions = msg as HashSet<MovementAction>;
+		if (actions != null) {
+			foreach (MovementAction ma in actions) {
+				heroActionMap [ma] ();
 			}
-			DoActions ();
+			DoMovement ();
 		}
 	}
 
-	private void DoActions() {
-		if (!hasAuthority) return;
+	private void DoMovement() {
 		// figure out the direction we're going to move including rotations
 		xMotion = 0;
 		if (minusX) xMotion -= 1;
@@ -163,12 +154,8 @@ public class Hero : NetworkBehaviour, IObserver {
 		CollisionFlags collisionFlags = characterController.Move (xzMovement.normalized * xzMoveSpeed * Time.deltaTime + yMovement * Time.deltaTime);
 		isGrounded = (collisionFlags & CollisionFlags.Below) != 0;
 
-		if (ability != null && ability.IsLegal (this)) {
-			ability.DoAbility (this);
-		}
-
 		// perform animations
-		heroAvatar.AnimateMovement(this);
+		heroAvatar.AnimateMovement(heroManager);
 
 		lastXzMove = xzMovement;
 	}

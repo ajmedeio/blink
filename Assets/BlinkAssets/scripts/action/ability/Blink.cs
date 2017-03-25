@@ -10,11 +10,11 @@ public class Blink : Ability {
 		30.0f, 500, "initialAnimation", 
 		-1.0f, 0, 0, 0, "tickAnimation", 0, "terminalAnimation") {}			
 
-	public override bool IsLegal(Hero hero) {
+	public override bool IsLegal(HeroManager hero) {
 		return true;
 	}
 
-	public override void DoAbility(Hero hero) {
+	public override void DoAbility(HeroManager hero) {
 		// Is view blocked?
 		RaycastHit hit;
 		Vector3 start = hero.transform.position + new Vector3(0.0f, -0.65f, 0.0f);
@@ -30,7 +30,6 @@ public class Blink : Ability {
 		}
 
 		hero.transform.position += translation;
-		Debug.Log (translation);
 		hero.heroAvatar.AnimateAbility (hero, HeroAnimator.AbilitySpell1H);
 	}
 }

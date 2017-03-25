@@ -7,16 +7,26 @@ public class Controller : NetworkBehaviour, IObservable {
 
 	private HashSet<IObserver> observers;
 	private KeyBindings bindings;
-	private HashSet<Action> actions;
+	private HashSet<MovementAction> movementActions;
+	private HashSet<HudAction> hudActions;
+	private HashSet<Ability> abilities;
 
 	void Start () {
 		observers = new HashSet<IObserver> ();
-		observers.Add (GetComponent<Hero> ());
+
+		// I don't know how to ensure the Controller is instantiated before the HeroMovement and HeroHud in which case
+		// I would call controller.AddObserver(heroMovement) & controller.AddObserver(heroHud) inside their respective
+		// classes, but this works for now.
+		observers.Add (GetComponent<HeroMovement> ());
+		observers.Add (GetComponent<HeroCombat> ());
+		observers.Add (GetComponent<HeroHud> ());
 
 		bindings = new KeyBindings ();
 		bindings.SetDefaultKeyboardMouseBindings ();
 
-		actions = new HashSet<Action> ();
+		movementActions = new HashSet<MovementAction> ();
+		hudActions = new HashSet<HudAction> ();
+		abilities = new HashSet<Ability> ();
 	}
 
 	private void Update() {
@@ -26,12 +36,12 @@ public class Controller : NetworkBehaviour, IObservable {
 
 		foreach (KeyValuePair<KeyCode, Action> kv in bindings.keyUpBindings) {
 			if (Input.GetKeyUp (kv.Key)) {
-				actions.Add (kv.Value);
+				AddActionToCorrectMap(kv);
 			}
 		}
 		foreach (KeyValuePair<KeyCode, Action> kv in bindings.keyDownBindings) {
 			if (Input.GetKeyDown (kv.Key)) {
-				actions.Add (kv.Value);
+				AddActionToCorrectMap(kv);
 			}
 		}
 	}
@@ -39,25 +49,34 @@ public class Controller : NetworkBehaviour, IObservable {
 	// Fixed update is called in sync with physics
 	void FixedUpdate () {
 		if (!hasAuthority) return;
-		// This is a lame way to do things, but it's the only way you can in Unity.
-		// Iterate over every key in bindings and compare any input with bound keys.
-		// notify any controller observers (usually a hero) of actions mapped to
-		// the pressed keys
 		if (bindings == null) return; // for some reason this is null sometimes in the middle of gameplay
 
 		foreach (KeyValuePair<KeyCode, Action> kv in bindings.keyBindings) {
 			if (Input.GetKey (kv.Key)) {
 				//print (string.Format ("Controller.cs: {0} was pressed and processed in Update", kv.Value));
-				actions.Add (kv.Value);
+				AddActionToCorrectMap(kv);
 			}
 		}
 
-		foreach (IObserver o in observers) o.Notify (this, actions);
+		foreach (IObserver o in observers) o.Notify (this, movementActions);
+		foreach (IObserver o in observers) o.Notify (this, hudActions);
+		foreach (IObserver o in observers) o.Notify (this, abilities);
 
-		actions.Clear ();
+		movementActions.Clear ();
+		hudActions.Clear ();
+		abilities.Clear ();
 	}
 
-	void IObservable.SetObserver(IObserver observer) {
+	void AddActionToCorrectMap(KeyValuePair<KeyCode, Action> kv) {
+		if (kv.Value is MovementAction)
+			movementActions.Add (kv.Value as MovementAction);
+		else if (kv.Value is HudAction)
+			hudActions.Add (kv.Value as HudAction);
+		else if (kv.Value is Ability)
+			abilities.Add (kv.Value as Ability);
+	}
+
+	void IObservable.AddObserver(IObserver observer) {
 		observers.Add(observer);
 	}
 

@@ -18,16 +18,14 @@ public class HeroCamera : NetworkBehaviour {
 	public float x = 0.0f;
 	public float y = 0.0f;
 
-	public Hero hero;
-	private Transform heroTransform;
+	public HeroMovement movement;
 	private Transform cameraTransform;
 
 	// Use this for initialization
 	void Start () {
 		cameraTransform = GetComponentInChildren<Camera>(true).transform;
 		if (isLocalPlayer) cameraTransform.gameObject.SetActive (true);
-		hero = GetComponentInParent<Hero> ();
-		heroTransform = hero.transform;
+		movement = GetComponent<HeroMovement> ();
 		x = transform.eulerAngles.y;
 		y = transform.eulerAngles.x;
 
@@ -41,11 +39,11 @@ public class HeroCamera : NetworkBehaviour {
 		if (!hasAuthority) return;
 
 		// If either mouse buttons are down, let them govern camera position 
-		if (hero.changeCameraAngle || hero.changeHeroAngle) {
+		if (movement.changeCameraAngle || movement.changeHeroAngle) {
 			x += Input.GetAxis("Mouse X") * xSpeed * 0.02f;
 			y -= Input.GetAxis("Mouse Y") * ySpeed * 0.02f;
 			// otherwise, ease behind the target if any of the directional keys are pressed 
-		} else if (hero.xMotion != 0 || hero.zMotion != 0) {
+		} else if (movement.xMotion != 0 || movement.zMotion != 0) {
 			//float targetRotationAngle = target.eulerAngles.y;
 			//float currentRotationAngle = transform.eulerAngles.y;
 			//x = Mathf.LerpAngle(currentRotationAngle, targetRotationAngle, rotationDampening * Time.deltaTime);
@@ -61,26 +59,26 @@ public class HeroCamera : NetworkBehaviour {
 
 		// Position camera
 		Vector3 minTargetHeight = new Vector3 (0, -targetHeight, 0);
-		Vector3 position = heroTransform.position - (rotation * Vector3.forward * distance + minTargetHeight);
+		Vector3 position = transform.position - (rotation * Vector3.forward * distance + minTargetHeight);
 		cameraTransform.position = position;
 
 		// Is view blocked?
 		RaycastHit hit;
-		Vector3 trueTargetPosition = heroTransform.transform.position - minTargetHeight;
+		Vector3 trueTargetPosition = transform.position - minTargetHeight;
 
 		// Cast the line to check if camera is in front of an object, shorten distance if so:
 		if (Physics.Linecast (trueTargetPosition, cameraTransform.position, out hit)) {
-			if (hit.collider != hero.characterController) {
+			if (hit.collider != movement.characterController) {
 				float tempDistance = Vector3.Distance (trueTargetPosition, hit.point) - 0.28f;
 
 				// Finally, reposition the camera:
-				position = heroTransform.position - (rotation * Vector3.forward * tempDistance + minTargetHeight);
+				position = transform.position - (rotation * Vector3.forward * tempDistance + minTargetHeight);
 				cameraTransform.position = position;
 			}
 		}
 
 		// reset actions to initial conditions so they don't "persist" into the next frame
-		hero.resetActions ();
+		movement.resetMovement ();
 	}
 
 	public float ClampAngle(float angle, float min, float max) { 

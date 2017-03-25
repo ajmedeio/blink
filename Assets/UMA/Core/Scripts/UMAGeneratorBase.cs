@@ -138,6 +138,7 @@ namespace UMA
 					umaTransform.localRotation = originalRot;
 					umaTransform.localPosition = originalPos;
 					snapshot.RestoreAnimatorState(animator);
+					// TODO ClientRpc OnUmaAnimatorCreated(animator)
 				}
 			}
 		}

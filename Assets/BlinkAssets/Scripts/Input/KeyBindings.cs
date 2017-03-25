@@ -17,24 +17,24 @@ public class KeyBindings {
 	public void SetDefaultKeyboardMouseBindings() {
 
 		// hero movement bindings
-		keyBindings.Add (KeyCode.X, HeroAction.MinusY);
-		keyBindings.Add (KeyCode.S, HeroAction.MinusZ);
-		keyBindings.Add (KeyCode.Q, HeroAction.MinusX);
-		keyBindings.Add (KeyCode.E, HeroAction.PlusX);
-		keyBindings.Add (KeyCode.W, HeroAction.PlusZ);
-		keyBindings.Add (KeyCode.A, HeroAction.MinusYRotate);
-		keyBindings.Add (KeyCode.D, HeroAction.PlusYRotate);
-		keyBindings.Add (KeyCode.Mouse0, HeroAction.ChangeCameraAngle);
-		keyBindings.Add (KeyCode.Mouse1, HeroAction.ChangeHeroAngle);
+		keyBindings.Add (KeyCode.X, MovementAction.MinusY);
+		keyBindings.Add (KeyCode.S, MovementAction.MinusZ);
+		keyBindings.Add (KeyCode.Q, MovementAction.MinusX);
+		keyBindings.Add (KeyCode.E, MovementAction.PlusX);
+		keyBindings.Add (KeyCode.W, MovementAction.PlusZ);
+		keyBindings.Add (KeyCode.A, MovementAction.MinusYRotate);
+		keyBindings.Add (KeyCode.D, MovementAction.PlusYRotate);
+		keyBindings.Add (KeyCode.Mouse0, MovementAction.ChangeCameraAngle);
+		keyBindings.Add (KeyCode.Mouse1, MovementAction.ChangeHeroAngle);
 
-		keyDownBindings.Add (KeyCode.Space, HeroAction.PlusY);
-		keyDownBindings.Add (KeyCode.T, HeroAction.ToggleRunWalk);
+		keyDownBindings.Add (KeyCode.Space, MovementAction.PlusY);
+		keyDownBindings.Add (KeyCode.T, MovementAction.ToggleRunWalk);
 
 		// ability bindings
-		keyUpBindings.Add (KeyCode.Alpha1, Abilities.blink);
+		keyUpBindings.Add (KeyCode.Alpha1, Ability.blink);
 
 		// hero HUD bindings
-		keyDownBindings.Add (KeyCode.Return, GuiAction.ToggleTyping);
+		keyDownBindings.Add (KeyCode.Return, HudAction.ToggleTyping);
 
 	}
 

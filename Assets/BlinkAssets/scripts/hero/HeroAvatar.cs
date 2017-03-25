@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -6,16 +7,16 @@ using UMA;
 
 public class HeroAvatar : NetworkBehaviour {
 
-	public SlotLibrary slotLibrary;
-	public OverlayLibrary overlayLibrary;
-	public RaceLibrary raceLibrary;
-	public UMAGeneratorBase generator;
-	public HeroAnimator heroAnimator;
+	private SlotLibrary slotLibrary;
+	private OverlayLibrary overlayLibrary;
+	private RaceLibrary raceLibrary;
+	private UMAGeneratorBase generator;
+	private HeroAnimator heroAnimator;
 
-	private UMADynamicAvatar umaDynamicAvatar;
-	private UMAData umaData;
-	private UMADnaHumanoid umaDna;
-	private UMADnaTutorial umaDnaTutorial;
+	private UMADynamicAvatar dynamicAvatar;
+	private UMAData data;
+	private UMADnaHumanoid dna;
+	private UMADnaTutorial tutorialDna;
 
 	private int numSlots = 20;
 
@@ -28,44 +29,46 @@ public class HeroAvatar : NetworkBehaviour {
 		GameObject umaLib = GameObject.FindWithTag ("UmaLib");
 		if (umaLib == null) 
 			throw new MissingComponentException ("Ensure an UmaLib is placed inside the scene with tag=UmaLib");
-		slotLibrary = GameObject.FindWithTag ("SlotLibrary").GetComponent<SlotLibrary>();
-		overlayLibrary = GameObject.FindWithTag ("OverlayLibrary").GetComponent<OverlayLibrary>();
-		raceLibrary = GameObject.FindWithTag ("RaceLibrary").GetComponent<RaceLibrary>();
-		generator = GameObject.FindWithTag ("UMAGenerator").GetComponent<UMAGenerator>();
+		slotLibrary = umaLib.GetComponentInChildren<SlotLibrary>();
+		overlayLibrary = umaLib.GetComponentInChildren<OverlayLibrary>();
+		raceLibrary = umaLib.GetComponentInChildren<RaceLibrary>();
+		generator = umaLib.GetComponentInChildren<UMAGenerator>();
 
 		InitializeUma ();
 	}
 
 	void Update() {
 		if (!hasAuthority) return;
-		if (bodyMass != umaDna.upperMuscle) {
+		if (bodyMass != dna.upperMuscle) {
 			SetBodyMass (bodyMass);
-			umaData.isShapeDirty = true;
-			umaData.Dirty ();
+			data.isShapeDirty = true;
+			data.Dirty ();
 		}
 	}
 
 	void InitializeUma() {
 		avatar = new GameObject ("Avatar");
-		umaDynamicAvatar = avatar.AddComponent<UMADynamicAvatar> ();
+		dynamicAvatar = avatar.AddComponent<UMADynamicAvatar> ();
 
-		umaDynamicAvatar.Initialize ();
-		umaData = umaDynamicAvatar.umaData;
-		umaDna = new UMADnaHumanoid ();
-		umaDnaTutorial = new UMADnaTutorial ();
+		dynamicAvatar.Initialize ();
+		data = dynamicAvatar.umaData;
+		dna = new UMADnaHumanoid ();
+		tutorialDna = new UMADnaTutorial ();
 
-		umaData.umaRecipe.slotDataList = new SlotData[numSlots];
+		data.umaRecipe.slotDataList = new SlotData[numSlots];
 
-		umaDynamicAvatar.umaGenerator = generator;
-		umaData.umaGenerator = generator;
+		dynamicAvatar.umaGenerator = generator;
+		data.umaGenerator = generator;
 
-		umaData.umaRecipe.AddDna (umaDna);
-		umaData.umaRecipe.AddDna (umaDnaTutorial);
+		data.umaRecipe.AddDna (dna);
+		data.umaRecipe.AddDna (tutorialDna);
 
 		CreateMale ();
-		umaDynamicAvatar.animationController = heroAnimator.runtimeAnimatorController;
 
-		umaDynamicAvatar.UpdateNewRace ();
+		// TODO make this a server command UMAGeneratorBase.OnUmaAnimatorCreated += heroAnimator.OnUmaAnimatorCreated;
+		dynamicAvatar.animationController = heroAnimator.runtimeAnimatorController;
+
+		dynamicAvatar.UpdateNewRace ();
 
 		avatar.transform.SetParent (this.transform);
 		avatar.transform.localPosition = new Vector3 (0f, -1f, 0f);
@@ -73,7 +76,7 @@ public class HeroAvatar : NetworkBehaviour {
 	}
 
 	void CreateMale() {
-		var umaRecipe = umaDynamicAvatar.umaData.umaRecipe;
+		var umaRecipe = dynamicAvatar.umaData.umaRecipe;
 		umaRecipe.SetRace(raceLibrary.GetRace ("HumanMale"));
 
 		SetSlot (0, "MaleEyes");
@@ -107,58 +110,45 @@ public class HeroAvatar : NetworkBehaviour {
 		AddOverlay (10, "FR_MC_Gloves");
 	}
 
-	private Animator GrabAnimatorFromUma() {
-		if (heroAnimator.animator == null) {
-			Debug.Log ("HeroAvatar.cs:GrabAnimatorFromUma:heroAnimator.animator is still null");
-			heroAnimator.animator = transform.GetComponentInChildren<Animator> ();
-			if (heroAnimator.animator != null) {
-				heroAnimator.animator.applyRootMotion = false;
-			}
-		}
-		return heroAnimator.animator;
-	}
-
-	public void AnimateAbility(Hero h, string animatorKey) {
-		if (GrabAnimatorFromUma () == null) return;
+	public void AnimateAbility(HeroManager h, string animatorKey) {
 		heroAnimator.AnimateAbility (h, avatar.transform, animatorKey);
 	}
 
-	public void AnimateMovement(Hero h) {
-		if (GrabAnimatorFromUma () == null) return;
+	public void AnimateMovement(HeroManager h) {
 		heroAnimator.AnimateMovement (h, avatar.transform);
 	}
 
 	void SetBodyMass(float mass) {
-		umaDna.upperMuscle = mass;
-		umaDna.upperWeight = mass;
-		umaDna.lowerMuscle = mass;
-		umaDna.lowerWeight = mass;
-		umaDna.forearmWidth = mass;
+		dna.upperMuscle = mass;
+		dna.upperWeight = mass;
+		dna.lowerMuscle = mass;
+		dna.lowerWeight = mass;
+		dna.forearmWidth = mass;
 	}
 
 	private void LinkOverlay(int slotNum, int otherSlotNum) {
-		umaData.umaRecipe.slotDataList [slotNum].SetOverlayList (
-			umaData.umaRecipe.slotDataList [otherSlotNum].GetOverlayList ());
+		data.umaRecipe.slotDataList [slotNum].SetOverlayList (
+			data.umaRecipe.slotDataList [otherSlotNum].GetOverlayList ());
 	}
 
 	private void AddOverlay(int slotNum, string overlayName) {
-		umaData.umaRecipe.slotDataList [slotNum].AddOverlay (overlayLibrary.InstantiateOverlay (overlayName));
+		data.umaRecipe.slotDataList [slotNum].AddOverlay (overlayLibrary.InstantiateOverlay (overlayName));
 	}
 
 	private void AddOverlay(int slotNum, string overlayName, Color color) {
-		umaData.umaRecipe.slotDataList [slotNum].AddOverlay (overlayLibrary.InstantiateOverlay (overlayName, color));
+		data.umaRecipe.slotDataList [slotNum].AddOverlay (overlayLibrary.InstantiateOverlay (overlayName, color));
 	}
 
 	private void RemoveOverlay(int slotNum, string overlayName) {
-		umaData.umaRecipe.slotDataList [slotNum].RemoveOverlay (overlayName);
+		data.umaRecipe.slotDataList [slotNum].RemoveOverlay (overlayName);
 	}
 
 	private void SetSlot(int slotNum, string slotName) {
-		umaData.umaRecipe.slotDataList [slotNum] = slotLibrary.InstantiateSlot (slotName);
+		data.umaRecipe.slotDataList [slotNum] = slotLibrary.InstantiateSlot (slotName);
 	}
 
 	private void RemoveSlot(int slotNum) {
-		umaData.umaRecipe.slotDataList [slotNum] = null;
+		data.umaRecipe.slotDataList [slotNum] = null;
 	}
 
 }

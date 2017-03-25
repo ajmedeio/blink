@@ -1,15 +1,22 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
-public class HeroHud : MonoBehaviour {
+public class HeroHud : MonoBehaviour, IObserver {
 
 	// Chat Variables
 	public bool isTyping = false;
 	public bool playerChatBubble = false;
 	public string msg = "";
 
-	void Start() {
+	private delegate void VoidFunc();
+	private Dictionary<HudAction, VoidFunc> hudActionMap;
 
+	void Start() {
+		hudActionMap = new Dictionary<HudAction, VoidFunc> {
+			{HudAction.ToggleTyping, ToggleTyping}
+		};
 	}
 
 	void Update() {
@@ -20,26 +27,36 @@ public class HeroHud : MonoBehaviour {
 
 	}
 
-	public void Notify(Hero hero) {
+	void IObserver.Notify(IObservable controller, object msg) {
+		HashSet<HudAction> hudActions = msg as HashSet<HudAction>;
+		if (hudActions != null) {
+			foreach (HudAction a in hudActions) {
+				hudActionMap [a] ();
+			}
+			DoHud();
+		}
+	}
+
+	private void DoHud() {
 		if (isTyping) {
-			GUI.SetNextControlName ("ChatField");
-			msg = GUI.TextField (new Rect (10, Screen.height - 32, 600, 20), msg, 25);
-			GUI.FocusControl ("ChatField");
+			//GUI.SetNextControlName ("ChatField");
+			//msg = GUI.TextField (new Rect (10, Screen.height - 32, 600, 20), msg, 25);
+			//GUI.FocusControl ("ChatField");
 		}
 
 		if (msg != "") {
 			print("going to the function");
 			// timeSaid = Time.time;
 			playerChatBubble = true;
-			if (Event.current.Equals (Event.KeyboardEvent ("return")) ) { 
+			if (Event.current.Equals (Event.KeyboardEvent ("return")) ) {
 				print("return pressed");
 				isTyping = !isTyping;
 			}
 
 			if (isTyping) {
-				GUI.SetNextControlName ("ChatField"); 
-				msg = GUI.TextField (new Rect (10, Screen.height - 32, 600, 20), msg, 25);
-				GUI.FocusControl ("ChatField");
+				//GUI.SetNextControlName ("ChatField"); 
+				//msg = GUI.TextField (new Rect (10, Screen.height - 32, 600, 20), msg, 25);
+				//GUI.FocusControl ("ChatField");
 			}
 
 			if (msg != "") {

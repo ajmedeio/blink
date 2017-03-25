@@ -154,12 +154,6 @@ public class PropagateReflectionTexture : MonoBehaviour
 				dstReflectionProbe.mode = ReflectionProbeMode.Custom;
 				dstReflectionProbe.customBakedTexture = srcTexture;
 			}
-			if (debugProbes > 0)
-			{
-				Debug.Log ("PropagateReflection to Probes: " + debugProbes + " - " + name, this);
-			}
-			//Debug.Log(" COUNT PropagateReflectionTexture: " + alteredCount,this);
-
 		}
 	}
 
