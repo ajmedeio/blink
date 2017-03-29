@@ -17,34 +17,62 @@ public class HeroAnimator : NetworkBehaviour {
 	public static readonly string Death = "Death";
 	public static readonly string AbilitySpell1H = "AbilitySpell1H";
 
-	public HashSet<string> movementLayer = new HashSet<string> () {Idle, Run, Jump, BackPedal, Fall, Walk, Stunned, Death};
-	public HashSet<string> abilitiesLayer = new HashSet<string> () {AbilitySpell1H};
-
-	public NetAnimator netAnimator;
 	public Animator animator;
-	public RuntimeAnimatorController runtimeAnimatorController; // initialized inside UnityEditor
-	private string lastAnimation = "";
+
+	[SyncVar] private string lastMovementAnim = "";
+	[SyncVar] private string lastAbilityAnimation = "";
+
+	[SyncVar(hook="IdleChanged")] public bool idle = false;
+	[SyncVar(hook="RunChanged")] public bool run = false;
+	[SyncVar(hook="JumpChanged")] public bool jump = false;
+	[SyncVar(hook="BackPedalChanged")] public bool backPedal = false;
+	[SyncVar(hook="FallChanged")] public bool fall = false;
+	[SyncVar(hook="WalkChanged")] public bool walk = false;
+	[SyncVar(hook="StunnedChanged")] public bool stunned = false;
+	[SyncVar(hook="DeathChanged")] public bool death = false;
+	[SyncVar(hook="AbilitySpell1HChanged")] public bool abilitySpell1H = false;
+
+	public void IdleChanged(bool value) { idle = value; animator.SetBool (Idle, value); }
+	public void RunChanged(bool value) { run = value; animator.SetBool (Run, value); }
+	public void JumpChanged(bool value) { jump = value; animator.SetBool (Jump, value); }
+	public void BackPedalChanged(bool value) { backPedal = value; animator.SetBool (BackPedal, value); }
+	public void FallChanged(bool value) { fall = value; animator.SetBool (Fall, value); }
+	public void WalkChanged(bool value) { walk = value; animator.SetBool (Walk, value); }
+	public void StunnedChanged(bool value) { stunned = value; animator.SetBool (Stunned, value); }
+	public void DeathChanged(bool value) { death = value; animator.SetBool (Death, value); }
+	public void AbilitySpell1HChanged(bool value) { abilitySpell1H = value; animator.SetBool (AbilitySpell1H, value); }
+
+	private Dictionary<string, Action<bool>> movementLayer;
+	private Dictionary<string, Action<bool>> abilitiesLayer;
 
 	void Start() {
-		
+		movementLayer = new Dictionary<string, Action<bool>> 
+		{
+			{Idle, IdleChanged},
+			{Run, RunChanged},
+			{Jump, JumpChanged},
+			{BackPedal, BackPedalChanged},
+			{Fall, FallChanged},
+			{Walk, WalkChanged},
+			{Stunned, StunnedChanged},
+			{Death, DeathChanged}
+		};
+
+		abilitiesLayer = new Dictionary<string, Action<bool>>
+		{
+			{AbilitySpell1H, AbilitySpell1HChanged}
+		};
 	}
 
-	public void OnUmaAnimatorCreated(Animator umaAnimator) {
-		print ("inside HeroAnimator.cs:SetupAnimator(animator)");
-		animator = umaAnimator;
+	public void OnAvatarCreated() {
+		animator = GetComponent<Animator> ();
 		animator.applyRootMotion = false;
-		netAnimator = gameObject.AddComponent<NetAnimator> ();
-		netAnimator.animator = umaAnimator;
-
-		// We shouldn't even use events, we're only registering ourselves for a single response.
-		// We just need a map from NetworkId to OnUmaAnimatorCreated callback. When the animator is created, send the notification
-		// to the proper client.
-		// TODO Send command to server to remove this from OnUmaAnimatorSetup UMAGeneratorBase.OnUmaAnimatorCreated -= OnUmaAnimatorCreated;
 	}
 
-	public void AnimateAbility(HeroManager hero, Transform avatar, string animatorKey) {
-		if (animator == null) return;
-		animator.Play (animatorKey);
+	public void AnimateAbility(HeroManager hero, Transform avatar, string animationName) {
+		//animator.Stop ();
+		animator.Play (animationName);
+		lastAbilityAnimation = animationName;
 	}
 
 	public void AnimateMovement(HeroManager hero, Transform avatar) {
@@ -60,10 +88,11 @@ public class HeroAnimator : NetworkBehaviour {
 				else animation = BackPedal;
 			}
 
-			if (h.zMotion < 0) avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (new Vector3(-h.xzMovement.x, 0.0f, -h.xzMovement.z)), 0.65f);
-			else avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (new Vector3(h.xzMovement.x, 0.0f, h.xzMovement.z)), 0.65f);
+			// TODO make sure to fix this rotation thing because the umaDynamicAvatar is now at the root level
+			if (h.zMotion < 0) avatar.localRotation = Quaternion.Slerp (avatar.localRotation , Quaternion.LookRotation (new Vector3(-h.xzMovement.x, 0.0f, -h.xzMovement.z)), 0.65f);
+			else avatar.localRotation = Quaternion.Slerp (avatar.localRotation, Quaternion.LookRotation (new Vector3(h.xzMovement.x, 0.0f, h.xzMovement.z)), 0.65f);
 		} else {
-			avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (h.transform.forward), 1f);
+			avatar.localRotation = Quaternion.Slerp (avatar.localRotation, Quaternion.LookRotation (h.transform.forward), 1f);
 		}
 
 		if (!h.isGrounded) {
@@ -71,18 +100,20 @@ public class HeroAnimator : NetworkBehaviour {
 			else animation = Fall;
 		}
 
-		if (lastAnimation != animation) {
-			if (animator == null) return;
-			animator.SetBool (animation, true);
-			FalsifyOthers (animation);
+		if (lastMovementAnim != animation) {
+			StartAnimation (animation);
 		}
 	}
 
+	public void StartAnimation(string animation) {
+		movementLayer [animation] (true);
+		FalsifyOthers (animation);
+	}
+
 	void FalsifyOthers(string truth) {
-		if (animator == null) return;
-		foreach (string par in movementLayer) {
-			if (truth != par) {
-				animator.SetBool (par, false);
+		foreach (KeyValuePair<string, Action<bool>> kv in movementLayer) {
+			if (truth != kv.Key) {
+				movementLayer [kv.Key] (false);
 			}
 		}
 	}

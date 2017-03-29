@@ -24,10 +24,10 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 	public Vector3 lastXzMove = Vector3.zero;
 
 	// Complex objects which a hero posseses
-	public Transform heroCameraTransform;
-	public HeroAvatar heroAvatar;
+	private Transform heroCameraTransform;
+	private HeroAvatar heroAvatar;
+	private HeroManager heroManager;
 	public CharacterController characterController;
-	public HeroManager heroManager;
 
 	// per frame state variables, these values will change pretty much every frame 
 	// and indicate which actions were sent to the hero in Notify.

@@ -13,19 +13,17 @@ public class HeroAvatar : NetworkBehaviour {
 	private UMAGeneratorBase generator;
 	private HeroAnimator heroAnimator;
 
-	private UMADynamicAvatar dynamicAvatar;
+	private UMADynamicAvatar avatar;
 	private UMAData data;
 	private UMADnaHumanoid dna;
 	private UMADnaTutorial tutorialDna;
 
 	private int numSlots = 20;
 
-	// the avatar
-	private GameObject avatar;
+	public RuntimeAnimatorController animController;
 	[Range (0.0f,1.0f)] public float bodyMass = 0.5f;
 
 	void Start() {
-		heroAnimator = GetComponent<HeroAnimator> ();
 		GameObject umaLib = GameObject.FindWithTag ("UmaLib");
 		if (umaLib == null) 
 			throw new MissingComponentException ("Ensure an UmaLib is placed inside the scene with tag=UmaLib");
@@ -47,36 +45,33 @@ public class HeroAvatar : NetworkBehaviour {
 	}
 
 	void InitializeUma() {
-		avatar = new GameObject ("Avatar");
-		dynamicAvatar = avatar.AddComponent<UMADynamicAvatar> ();
+		avatar = gameObject.AddComponent<UMADynamicAvatar> ();
+		avatar.Initialize ();
+		avatar.umaGenerator = generator;
+		avatar.animationController = animController;
+		// TODO make this a server command UMAGeneratorBase.OnUmaAnimatorCreated += heroAnimator.OnUmaAnimatorCreated;
+		avatar.umaData.OnCharacterCreated += OnCharacterCreated;
 
-		dynamicAvatar.Initialize ();
-		data = dynamicAvatar.umaData;
 		dna = new UMADnaHumanoid ();
 		tutorialDna = new UMADnaTutorial ();
 
-		data.umaRecipe.slotDataList = new SlotData[numSlots];
-
-		dynamicAvatar.umaGenerator = generator;
+		data = avatar.umaData;
 		data.umaGenerator = generator;
-
+		data.umaRecipe.slotDataList = new SlotData[numSlots];
 		data.umaRecipe.AddDna (dna);
 		data.umaRecipe.AddDna (tutorialDna);
+		ApplyHumanMaleRecipe ();
 
-		CreateMale ();
-
-		// TODO make this a server command UMAGeneratorBase.OnUmaAnimatorCreated += heroAnimator.OnUmaAnimatorCreated;
-		dynamicAvatar.animationController = heroAnimator.runtimeAnimatorController;
-
-		dynamicAvatar.UpdateNewRace ();
-
-		avatar.transform.SetParent (this.transform);
-		avatar.transform.localPosition = new Vector3 (0f, -1f, 0f);
-		avatar.transform.localRotation = Quaternion.identity;
+		avatar.UpdateNewRace ();
+	}
+		
+	void OnCharacterCreated (UMAData obj) {
+		heroAnimator = GetComponent<HeroAnimator> ();
+		heroAnimator.OnAvatarCreated ();
 	}
 
-	void CreateMale() {
-		var umaRecipe = dynamicAvatar.umaData.umaRecipe;
+	void ApplyHumanMaleRecipe() {
+		var umaRecipe = avatar.umaData.umaRecipe;
 		umaRecipe.SetRace(raceLibrary.GetRace ("HumanMale"));
 
 		SetSlot (0, "MaleEyes");
@@ -94,7 +89,7 @@ public class HeroAvatar : NetworkBehaviour {
 
 		AddOverlay (0, "EyeOverlay");
 		AddOverlay (1, "InnerMouth");
-		AddOverlay (2, "MaleHead02");
+		AddOverlay (2, "MaleHead02", Color.black);
 		AddOverlay (2, "MaleEyebrow01", Color.black);
 		AddOverlay (2, "MaleBeard03", Color.gray);
 		AddOverlay (3, "MaleBody02");
@@ -104,18 +99,20 @@ public class HeroAvatar : NetworkBehaviour {
 		//LinkOverlay (5, 3); // MaleLegs
 		AddOverlay (5, "MaleJeans01", Color.gray);
 		AddOverlay (6, "FR_MC_Boots");
-		AddOverlay (7, "M_Hair_Shaggy", Color.gray);
+		AddOverlay (7, "M_Hair_Shaggy", Color.red);
 		AddOverlay (8, "FR_MC_ShoulderPads");
 		AddOverlay (9, "FR_MC_TorsoArmor");
 		AddOverlay (10, "FR_MC_Gloves");
 	}
 
-	public void AnimateAbility(HeroManager h, string animatorKey) {
-		heroAnimator.AnimateAbility (h, avatar.transform, animatorKey);
+	public void AnimateAbility(HeroManager h, string animationName) {
+		if (heroAnimator != null)
+			heroAnimator.AnimateAbility (h, h.transform.FindChild("Root"), animationName);
 	}
 
 	public void AnimateMovement(HeroManager h) {
-		heroAnimator.AnimateMovement (h, avatar.transform);
+		if (heroAnimator != null)
+			heroAnimator.AnimateMovement (h, h.transform.FindChild("Root"));
 	}
 
 	void SetBodyMass(float mass) {

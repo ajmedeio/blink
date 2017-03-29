@@ -10,7 +10,8 @@ using UMA;
 /// <summary>
 /// Base class for UMA character.
 /// </summary>
-public abstract class UMAAvatarBase : MonoBehaviour {
+public abstract class UMAAvatarBase : MonoBehaviour
+{
 
 	public UMAContext context;
 	public UMAData umaData;
@@ -25,7 +26,7 @@ public abstract class UMAAvatarBase : MonoBehaviour {
 	public UMAGeneratorBase umaGenerator;
 	public RuntimeAnimatorController animationController;
 	[NonSerialized]
-	[System.Obsolete("UMAAvatarBase.umaChild is obsolete use UMAData.umaRoot instead", false)]
+	[System.Obsolete ("UMAAvatarBase.umaChild is obsolete use UMAData.umaRoot instead", false)]
 	public GameObject umaChild;
 	protected RaceData umaRace = null;
 
@@ -42,107 +43,101 @@ public abstract class UMAAvatarBase : MonoBehaviour {
 	/// </summary>
 	public UMADataEvent CharacterUpdated;
 
-	public virtual void Start()
+	public virtual void Start ()
 	{
-		Initialize();
+		Initialize ();
 	}
-	public void Initialize()
+
+	public void Initialize ()
 	{
-		if (context == null)
-		{
-			context = UMAContext.FindInstance();
+		if (context == null) {
+			context = UMAContext.FindInstance ();
 		}
 
-		if (umaData == null)
-		{
-			umaData = GetComponent<UMAData>();
-			if (umaData == null)
-			{
-				umaData = gameObject.AddComponent<UMAData>();
-				if (umaGenerator != null && !umaGenerator.gameObject.activeInHierarchy)
-				{
-					Debug.LogError("Invalid UMA Generator on Avatar.", gameObject);
-					Debug.LogError("UMA generators must be active scene objects!", umaGenerator.gameObject);
+		if (umaData == null) {
+			umaData = GetComponent<UMAData> ();
+			if (umaData == null) {
+				umaData = gameObject.AddComponent<UMAData> ();
+				if (umaGenerator != null && !umaGenerator.gameObject.activeInHierarchy) {
+					Debug.LogError ("Invalid UMA Generator on Avatar.", gameObject);
+					Debug.LogError ("UMA generators must be active scene objects!", umaGenerator.gameObject);
 					umaGenerator = null;
 				}
 			}
 		}
-		if (umaGenerator != null)
-		{
+		if (umaGenerator != null) {
 			umaData.umaGenerator = umaGenerator;
 		}
-		if (CharacterCreated != null) umaData.CharacterCreated = CharacterCreated;
-		if (CharacterDestroyed != null) umaData.CharacterDestroyed = CharacterDestroyed;
-		if (CharacterUpdated != null) umaData.CharacterUpdated = CharacterUpdated;
+		if (CharacterCreated != null)
+			umaData.CharacterCreated = CharacterCreated;
+		if (CharacterDestroyed != null)
+			umaData.CharacterDestroyed = CharacterDestroyed;
+		if (CharacterUpdated != null)
+			umaData.CharacterUpdated = CharacterUpdated;
 	}
 
 	/// <summary>
 	/// Load a UMA recipe into the avatar.
 	/// </summary>
 	/// <param name="umaRecipe">UMA recipe.</param>
-	public virtual void Load(UMARecipeBase umaRecipe)
+	public virtual void Load (UMARecipeBase umaRecipe)
 	{
-		Load(umaRecipe, null);
+		Load (umaRecipe, null);
 	}
+
 	/// <summary>
 	/// Load a UMA recipe and additional recipes into the avatar.
 	/// </summary>
 	/// <param name="umaRecipe">UMA recipe.</param>
 	/// <param name="umaAdditionalRecipes">Additional recipes.</param>
-	public virtual void Load(UMARecipeBase umaRecipe, params UMARecipeBase[] umaAdditionalRecipes)
+	public virtual void Load (UMARecipeBase umaRecipe, params UMARecipeBase[] umaAdditionalRecipes)
 	{
-		if (umaRecipe == null) return;
-		if (umaData == null)
-		{
-			Initialize();
+		if (umaRecipe == null)
+			return;
+		if (umaData == null) {
+			Initialize ();
 		}
-		Profiler.BeginSample("Load");
+		Profiler.BeginSample ("Load");
 
 		this.umaRecipe = umaRecipe;
 
-		umaRecipe.Load(umaData.umaRecipe, context);
-		umaData.AddAdditionalRecipes(umaAdditionalRecipes, context);
+		umaRecipe.Load (umaData.umaRecipe, context);
+		umaData.AddAdditionalRecipes (umaAdditionalRecipes, context);
 
-		if (umaRace != umaData.umaRecipe.raceData)
-		{
-			UpdateNewRace();
+		if (umaRace != umaData.umaRecipe.raceData) {
+			UpdateNewRace ();
+		} else {
+			UpdateSameRace ();
 		}
-		else
-		{
-			UpdateSameRace();
-		}
-		Profiler.EndSample();
+		Profiler.EndSample ();
 	}
 
-	public void UpdateSameRace()
+	public void UpdateSameRace ()
 	{
-		umaData.Dirty(true, true, true);
+		umaData.Dirty (true, true, true);
 	}
 
-	public void UpdateNewRace()
+	public void UpdateNewRace ()
 	{
 		umaRace = umaData.umaRecipe.raceData;
-		if (animationController != null)
-		{
+		if (animationController != null) {
 			umaData.animationController = animationController;
-//				umaData.animator.runtimeAnimatorController = animationController;
 		}
 		umaData.umaGenerator = umaGenerator;
 
-		umaData.Dirty(true, true, true);
+		umaData.Dirty (true, true, true);
 	}
 
 	/// <summary>
 	/// Hide the avatar and clean up its components.
 	/// </summary>
-	public virtual void Hide()
+	public virtual void Hide ()
 	{
-		if (umaData != null)
-		{
-			umaData.CleanTextures();
-			umaData.CleanMesh(true);
-			umaData.CleanAvatar();
-			Destroy(umaData.umaRoot);
+		if (umaData != null) {
+			umaData.CleanTextures ();
+			umaData.CleanMesh (true);
+			umaData.CleanAvatar ();
+			Destroy (umaData.umaRoot);
 			umaData.umaRoot = null;
 			umaData.myRenderer = null;
 			umaData.animator = null;
@@ -155,28 +150,22 @@ public abstract class UMAAvatarBase : MonoBehaviour {
 	/// <summary>
 	/// Load the avatar recipe and create components.
 	/// </summary>
-	public virtual void Show()
+	public virtual void Show ()
 	{
-		if (umaRecipe != null)
-		{
-			Load(umaRecipe);
-		}
-		else
-		{
-			if (umaRace != umaData.umaRecipe.raceData)
-			{
-				UpdateNewRace();
-			}
-			else
-			{
-				UpdateSameRace();
+		if (umaRecipe != null) {
+			Load (umaRecipe);
+		} else {
+			if (umaRace != umaData.umaRecipe.raceData) {
+				UpdateNewRace ();
+			} else {
+				UpdateSameRace ();
 			}
 		}
 	}
 
-	void OnDrawGizmosSelected()
+	void OnDrawGizmosSelected ()
 	{
 		Gizmos.color = Color.white;
-		Gizmos.DrawWireCube(transform.position, new Vector3(0.6f, 0.2f, 0.6f));
+		Gizmos.DrawWireCube (transform.position, new Vector3 (0.6f, 0.2f, 0.6f));
 	}
 }

@@ -30,7 +30,7 @@ public class Controller : NetworkBehaviour, IObservable {
 	}
 
 	private void Update() {
-		if (!hasAuthority) return;
+		if (!isLocalPlayer) return;
 
 		if (bindings == null) return; // for some reason this is null sometimes in the middle of gameplay
 
@@ -48,7 +48,7 @@ public class Controller : NetworkBehaviour, IObservable {
 
 	// Fixed update is called in sync with physics
 	void FixedUpdate () {
-		if (!hasAuthority) return;
+		if (!isLocalPlayer) return;
 		if (bindings == null) return; // for some reason this is null sometimes in the middle of gameplay
 
 		foreach (KeyValuePair<KeyCode, Action> kv in bindings.keyBindings) {

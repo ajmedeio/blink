@@ -18,7 +18,7 @@ public class HeroCamera : NetworkBehaviour {
 	public float x = 0.0f;
 	public float y = 0.0f;
 
-	public HeroMovement movement;
+	private HeroMovement movement;
 	private Transform cameraTransform;
 
 	// Use this for initialization

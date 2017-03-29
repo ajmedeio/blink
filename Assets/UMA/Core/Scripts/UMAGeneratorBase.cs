@@ -99,7 +99,9 @@ namespace UMA
 				animator.Update(0.00001f);
 				animator.enabled = animating;
 			}
-		}	
+		}
+
+
 
 		/// <summary>
 		/// Update the avatar of a UMA character.
