@@ -1,9 +1,24 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 
 public class HeroHud : MonoBehaviour, IObserver {
+
+	private HeroManager hero;
+	private HeroCombat heroCombat;
+
+	private GameObject heroStatusBar;
+	private TextMeshProUGUI heroName;
+	private Image health;
+	private TextMeshProUGUI healthText;
+
+	private GameObject targetStatusBar;
+	private TextMeshProUGUI targetName;
+	private Image targetHealth;
+	private TextMeshProUGUI targetHealthText;
 
 	// Chat Variables
 	public bool isTyping = false;
@@ -17,10 +32,38 @@ public class HeroHud : MonoBehaviour, IObserver {
 		hudActionMap = new Dictionary<HudAction, VoidFunc> {
 			{HudAction.ToggleTyping, ToggleTyping}
 		};
+
+		heroStatusBar = transform.FindChild ("HeroHud/HeroStatusBar").gameObject;
+		heroName = heroStatusBar.transform.FindChild ("HeroName").GetComponent<TextMeshProUGUI>();
+		health = heroStatusBar.transform.FindChild ("HealthBar/Health").GetComponent<Image>();
+		healthText = heroStatusBar.transform.FindChild ("HealthBar/HealthText").GetComponent<TextMeshProUGUI>();
+
+		targetStatusBar = transform.FindChild ("HeroHud/TargetStatusBar").gameObject;
+		targetStatusBar.SetActive (false);
+		targetName = targetStatusBar.transform.FindChild ("TargetName").GetComponent<TextMeshProUGUI>();
+		targetHealth = targetStatusBar.transform.FindChild ("HealthBar/Health").GetComponent<Image>();
+		targetHealthText = targetStatusBar.transform.FindChild ("HealthBar/HealthText").GetComponent<TextMeshProUGUI>();
+
+		hero = GetComponent<HeroManager> ();
+		heroCombat = hero.heroCombat;
+
+		heroName.text = "Alzanar";
+		health.fillAmount = (float) heroCombat.health / (float) heroCombat.maxHealth;
+		healthText.text = "Health: " + heroCombat.health + " / " + heroCombat.maxHealth;
 	}
 
-	void Update() {
+	public void UpdateTarget() {
+		HeroManager target = heroCombat.target;
+		HeroCombat targetCombat = target.heroCombat;
+		targetStatusBar.SetActive (true);
+		targetName.text = target.netId.ToString();
+		targetHealth.fillAmount = (float) targetCombat.health / (float) targetCombat.maxHealth;
+		targetHealthText.text = "Health: " + targetCombat.health + " / " + targetCombat.maxHealth;
+	}
 
+	public void UpdateHealth() {
+		health.fillAmount = (float) heroCombat.health / (float) heroCombat.maxHealth;
+		healthText.text = "Health: " + heroCombat.health + " / " + heroCombat.maxHealth;
 	}
 
 	void OnGUI() {
@@ -35,6 +78,10 @@ public class HeroHud : MonoBehaviour, IObserver {
 			}
 			DoHud();
 		}
+	}
+
+	public void OnDeath() {
+		Debug.Log ("Imagine a panel that lets you resurrect.");
 	}
 
 	private void DoHud() {

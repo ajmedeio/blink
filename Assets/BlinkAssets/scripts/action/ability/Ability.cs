@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public abstract class Ability : Action {
 
@@ -13,20 +14,33 @@ public abstract class Ability : Action {
 	// Taunt ability that puts a debuff on the target which increases damage done to the target
 	// by the taunter until the tauntee
 
+	// Teleportation that every player has after visiting some person or trainer or zone.
+
+	// Abilities shouldn't be given through some UI, you should have to have the ability trained
+	// by masters of that class of abilities
+	// then you learn the ability and it's added to your spellbook.
+	// The Hall of Masters
+
 	public static readonly Ability blink = new Blink();
+	public static readonly Ability firebolt = new Firebolt();
 
 	public Ability(string name) : base(name) {
 	}
 
-	public Ability (string name, string description, float range, float initialDamage, string initialAnimation, 
+	public Ability (string name, string description, float range, int initialDamage, string initialAnimation, 
 		float radius, float dotTickInterval, float dotDuration, float dotDamage, string dotAnimation, 
 		float terminalDamage, string terminalAnimation) : base(name) {
-
+		initialDamage = initialDamage;
 	}
 
 	public abstract bool IsLegal (HeroManager hero);
 
+	//[Command]
 	public abstract void DoAbility (HeroManager hero);
+
+	public abstract void OnHit (HeroManager target);
+
+	public int initialDamage { get; set; }
 
 }
 

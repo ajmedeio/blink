@@ -5,34 +5,65 @@ using UnityEngine.Networking;
 
 public class HeroCombat : NetworkBehaviour, IObserver {
 
-	public int health = 1000;
-	public int maxHealth = 1000;
-	public bool dead = false;
+	[SyncVar] public int health = 1000;
 
-	public HeroManager target = null;
+	public int maxHealth = 1000;
+	public bool isDead = false;
+	public bool isFullHealth = false;
+
+	// The mouse interacts with the world, I need variables to store it's state
+	private Camera camera;
+	private RaycastHit hit;
+
 	public HeroManager self = null;
+	public HeroManager target = null;
 
 	void Start () {
-		maxHealth = 1000;
-		health = 1000;
+		camera = transform.GetComponentInChildren<Camera> (true);
 		self = GetComponent<HeroManager> ();
+
+		health = 1000;
+		maxHealth = 1000;
 	}
 
-	public void TakeDamage(int amount) {
+	void Update() {
+		if (Input.GetMouseButtonDown (0)) {
+			Ray ray = camera.ScreenPointToRay (Input.mousePosition);
+
+			if (Physics.Raycast (ray, out hit)) {
+				HeroManager tmpTarget = hit.transform.GetComponent<HeroManager> ();
+				if (tmpTarget != null) {// && target != self
+					target = tmpTarget;
+					OnTargetChanged ();
+				}
+			}
+		}
+
+		if (transform.position.y < -50) {
+			CmdTakeDamage (maxHealth);
+		}
+	}
+
+	[Command]
+	public void CmdTakeDamage(int amount) {
 		if (health - amount <= 0) {
 			health = 0;
 			OnZeroHealth ();
 		} else {
 			health -= amount;
+			OnDamageTaken ();
 		}
 	}
 
-	public void TakeHealing(int amount) {
+	[Command]
+	public void CmdTakeHealing(int amount) {
 		if (health + amount >= maxHealth) {
 			health = maxHealth;
+			OnFullHealth ();
 		} else {
 			health += amount;
 		}
+		OnHealingTaken ();
 	}
 
 	void IObserver.Notify(IObservable controller, object msg) {
@@ -50,8 +81,24 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 		}
 	}
 
-	private void OnZeroHealth() {
-		dead = true;
+	private void OnTargetChanged() {
+		self.heroHud.UpdateTarget ();
 	}
 
+	private void OnDamageTaken() {
+		self.heroHud.UpdateHealth ();
+	}
+
+	private void OnHealingTaken() {
+		self.heroHud.UpdateHealth ();
+	}
+
+	private void OnZeroHealth() {
+		isDead = true;
+		self.heroHud.OnDeath ();
+	}
+
+	private void OnFullHealth() {
+		isFullHealth = true;
+	}
 }

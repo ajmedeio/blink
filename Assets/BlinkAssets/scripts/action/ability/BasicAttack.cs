@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class BasicAttack : Ability {
 	
@@ -10,8 +11,12 @@ public class BasicAttack : Ability {
 		return true;
 	}
 
+	//[Command]
 	public override void DoAbility(HeroManager hero) {
 
 	}
 
+	public override void OnHit(HeroManager target) {
+
+	}
 }

@@ -45,7 +45,8 @@ public class HeroAvatar : NetworkBehaviour {
 	}
 
 	void InitializeUma() {
-		avatar = gameObject.AddComponent<UMADynamicAvatar> ();
+		GameObject go = transform.FindChild ("AvatarContainer").gameObject;
+		avatar = go.AddComponent<UMADynamicAvatar> ();
 		avatar.Initialize ();
 		avatar.umaGenerator = generator;
 		avatar.animationController = animController;
@@ -89,9 +90,9 @@ public class HeroAvatar : NetworkBehaviour {
 
 		AddOverlay (0, "EyeOverlay");
 		AddOverlay (1, "InnerMouth");
-		AddOverlay (2, "MaleHead02", Color.black);
-		AddOverlay (2, "MaleEyebrow01", Color.black);
-		AddOverlay (2, "MaleBeard03", Color.gray);
+		AddOverlay (2, "MaleHead02");
+		AddOverlay (2, "MaleEyebrow01", Color.gray);
+		//AddOverlay (2, "MaleBeard03", Color.gray);
 		AddOverlay (3, "MaleBody02");
 		AddOverlay (3, "MaleUnderwear01");
 		AddOverlay (3, "SA_Tee", Color.white);
@@ -99,7 +100,7 @@ public class HeroAvatar : NetworkBehaviour {
 		//LinkOverlay (5, 3); // MaleLegs
 		AddOverlay (5, "MaleJeans01", Color.gray);
 		AddOverlay (6, "FR_MC_Boots");
-		AddOverlay (7, "M_Hair_Shaggy", Color.red);
+		AddOverlay (7, "M_Hair_Shaggy");
 		AddOverlay (8, "FR_MC_ShoulderPads");
 		AddOverlay (9, "FR_MC_TorsoArmor");
 		AddOverlay (10, "FR_MC_Gloves");
@@ -107,12 +108,12 @@ public class HeroAvatar : NetworkBehaviour {
 
 	public void AnimateAbility(HeroManager h, string animationName) {
 		if (heroAnimator != null)
-			heroAnimator.AnimateAbility (h, h.transform.FindChild("Root"), animationName);
+			heroAnimator.AnimateAbility (h, h.transform.FindChild("AvatarContainer"), animationName);
 	}
 
 	public void AnimateMovement(HeroManager h) {
 		if (heroAnimator != null)
-			heroAnimator.AnimateMovement (h, h.transform.FindChild("Root"));
+			heroAnimator.AnimateMovement (h, h.transform.FindChild("AvatarContainer"));
 	}
 
 	void SetBodyMass(float mass) {

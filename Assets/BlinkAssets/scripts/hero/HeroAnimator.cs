@@ -65,17 +65,23 @@ public class HeroAnimator : NetworkBehaviour {
 	}
 
 	public void OnAvatarCreated() {
-		animator = GetComponent<Animator> ();
-		animator.applyRootMotion = false;
+		animator = GetComponentInChildren<Animator> ();
+		if (animator != null) animator.applyRootMotion = false;
 	}
+
 
 	public void AnimateAbility(HeroManager hero, Transform avatar, string animationName) {
 		//animator.Stop ();
-		animator.Play (animationName);
-		lastAbilityAnimation = animationName;
+		//animator.Play (animationName);
+		//lastAbilityAnimation = animationName;
 	}
 
 	public void AnimateMovement(HeroManager hero, Transform avatar) {
+		if (animator == null) {
+			OnAvatarCreated ();
+			return;
+		}
+		
 		string animation = Idle;
 		HeroMovement h = hero.heroMovement;
 
@@ -88,11 +94,15 @@ public class HeroAnimator : NetworkBehaviour {
 				else animation = BackPedal;
 			}
 
-			// TODO make sure to fix this rotation thing because the umaDynamicAvatar is now at the root level
-			if (h.zMotion < 0) avatar.localRotation = Quaternion.Slerp (avatar.localRotation , Quaternion.LookRotation (new Vector3(-h.xzMovement.x, 0.0f, -h.xzMovement.z)), 0.65f);
-			else avatar.localRotation = Quaternion.Slerp (avatar.localRotation, Quaternion.LookRotation (new Vector3(h.xzMovement.x, 0.0f, h.xzMovement.z)), 0.65f);
+			// rotate uma to face direction of motion
+			if (h.zMotion < 0)
+				avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (-h.xzMovement), 0.85f);
+			else
+				avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (h.xzMovement), 0.85f);
+			
 		} else {
-			avatar.localRotation = Quaternion.Slerp (avatar.localRotation, Quaternion.LookRotation (h.transform.forward), 1f);
+			// rotate uma back to forward position
+			avatar.rotation = Quaternion.Slerp (avatar.rotation, Quaternion.LookRotation (h.transform.forward), 1f);
 		}
 
 		if (!h.isGrounded) {
@@ -100,12 +110,16 @@ public class HeroAnimator : NetworkBehaviour {
 			else animation = Fall;
 		}
 
-		if (lastMovementAnim != animation) {
-			StartAnimation (animation);
+		if (hero.heroCombat.isDead) {
+			animation = Death;
 		}
+
+		if (lastMovementAnim != animation) CmdStartAnimation (animation);
+		lastMovementAnim = animation;
 	}
 
-	public void StartAnimation(string animation) {
+	[Command]
+	public void CmdStartAnimation(string animation) {
 		movementLayer [animation] (true);
 		FalsifyOthers (animation);
 	}

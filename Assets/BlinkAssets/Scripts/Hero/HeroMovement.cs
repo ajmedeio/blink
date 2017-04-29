@@ -8,8 +8,8 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 	// Movement Variables
 	public bool isWalking = false;
 	public bool isGrounded = false;
-	public Vector3 gravity = new Vector3 (0.0f, -1.0f, 0.0f);
-	public Vector3 jump = new Vector3 (0.0f, 25.0f, 0.0f);
+	public Vector3 gravity = new Vector3 (0.0f, -0.75f, 0.0f);
+	public Vector3 jump = new Vector3 (0.0f, 15.0f, 0.0f);
 	public float maxYSpeed = 50.0f;
 
 	public float rotateSpeed = 150.0f;
@@ -24,9 +24,10 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 	public Vector3 lastXzMove = Vector3.zero;
 
 	// Complex objects which a hero posseses
-	private Transform heroCameraTransform;
+	private HeroCamera heroCamera;
 	private HeroAvatar heroAvatar;
 	private HeroManager heroManager;
+	private Camera camera;
 	public CharacterController characterController;
 
 	// per frame state variables, these values will change pretty much every frame 
@@ -57,7 +58,8 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 
 		heroAvatar = GetComponent<HeroAvatar> ();
 		characterController = GetComponent<CharacterController>();
-		heroCameraTransform = GetComponentInChildren<Camera>(true).transform;
+		camera = GetComponentInChildren<Camera>(true);
+		heroCamera = GetComponent<HeroCamera> ();
 		heroManager = GetComponent<HeroManager> ();
 
 		heroActionMap = new Dictionary<MovementAction, VoidFunc> {
@@ -108,6 +110,18 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 		}
 	}
 
+
+	static int heroesLayer = 1 << 9;
+	static int notHeroesLayer = ~heroesLayer;
+	private bool IsGrounded() {
+		var bounds = characterController.bounds;
+		var center = bounds.center;
+		float distToGround = bounds.extents.y;
+		Vector3 bottom = new Vector3 (center.x, bounds.min.y, center.z);
+		Debug.DrawLine (center, bottom); //  - new Vector3(0, 0.325f, 0)
+		return Physics.CheckCapsule (center, bottom, 0.325f, notHeroesLayer);
+	}
+
 	private void DoMovement() {
 		// figure out the direction we're going to move including rotations
 		xMotion = 0;
@@ -138,73 +152,43 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 
 		// if the character is in the air, only apply movement in a small way
 		if (!isGrounded) {
-			//xzMoveSpeed = inAirSpeed;
 			if (yMovement.y > -maxYSpeed) yMovement += gravity;
-		} else {
-			yMovement = gravity;
 		}
 			
-		if (isGrounded && plusY) yMovement += jump;
+		if (isGrounded && plusY) { 
+			yMovement = gravity;
+			yMovement += jump;
+		}
 
-		if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, heroCameraTransform.eulerAngles.y, 0);
+		if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, camera.transform.eulerAngles.y, 0);
 		else transform.Rotate (0, yRotation * rotateSpeed * Time.deltaTime, 0);
 
 		//Move the avatar
 		xzMovement = transform.TransformDirection (xzMovement);
-		CollisionFlags collisionFlags = characterController.Move (xzMovement.normalized * xzMoveSpeed * Time.deltaTime + yMovement * Time.deltaTime);
-		isGrounded = (collisionFlags & CollisionFlags.Below) != 0;
-
-		// perform animations
+		characterController.Move (xzMovement.normalized * xzMoveSpeed * Time.deltaTime + yMovement * Time.deltaTime);
+		isGrounded = IsGrounded();
 		heroAvatar.AnimateMovement(heroManager);
+		heroCamera.UpdateHeroCamera ();
 
 		lastXzMove = xzMovement;
+		// reset actions to initial conditions so they don't "persist" into the next frame
+		resetMovement ();
 	}
 
-	public void Stand() {
-		stand = true;
-	}
+	public void MinusX() { minusX = true; }
+	public void MinusY() { minusY = true; }
+	public void MinusZ() { minusZ = true; }
 
-	public void MinusX() {
-		minusX = true;
-	}
+	public void PlusX() { plusX = true; }
+	public void PlusY() { plusY = true; }
+	public void PlusZ() { plusZ = true; }
 
-	public void MinusY() {
-		minusY = true;
-	}
+	public void MinusYRotate() { minusYRotate = true; }
+	public void PlusYRotate() { plusYRotate = true; }
 
-	public void MinusZ() {
-		minusZ = true;
-	}
+	public void ChangeHeroAngle() { changeHeroAngle = true; }
+	public void ChangeCameraAngle() { changeCameraAngle = true; }
 
-	public void PlusX() {
-		plusX = true;
-	}
-
-	public void PlusY() {
-		plusY = true;
-	}
-
-	public void PlusZ() {
-		plusZ = true;
-	}
-
-	public void MinusYRotate() {
-		minusYRotate = true;
-	}
-
-	public void PlusYRotate() {
-		plusYRotate = true;
-	}
-
-	public void ChangeHeroAngle() {
-		changeHeroAngle = true;
-	}
-
-	public void ChangeCameraAngle() {
-		changeCameraAngle = true;
-	}
-
-	public void ToggleRunWalk() {
-		isWalking = !isWalking;
-	}
+	public void Stand() { stand = true; }
+	public void ToggleRunWalk() { isWalking = !isWalking; }
 }

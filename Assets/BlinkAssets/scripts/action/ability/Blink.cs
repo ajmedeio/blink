@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class Blink : Ability {
 
@@ -14,22 +15,26 @@ public class Blink : Ability {
 		return true;
 	}
 
+	//[Command]
 	public override void DoAbility(HeroManager hero) {
 		// Is view blocked?
 		RaycastHit hit;
-		Vector3 start = hero.transform.position + new Vector3(0.0f, -0.65f, 0.0f);
-		Vector3 translation = new Vector3(0.0f, 0.0f, 2.5f);
-		translation = hero.transform.TransformDirection (translation);
+		Vector3 start = hero.characterController.bounds.center;
+		Transform avatar = hero.transform.FindChild ("AvatarContainer").transform;
+		Vector3 translation = avatar.forward.normalized * 2.5f;
 
 		// Cast the line to check if camera is in front of an object, shorten distance if so:
-		if (Physics.Linecast (start, start + translation, out hit)) {
-			// if the cast hits then it traveled the length of the radius of the capsulecollider
-			// which needs to be subtracted out with the 0.45f
-			// - 0.45f
-			translation = start + translation - hit.point;
+		int heroesLayer = LayerMask.NameToLayer("Heroes");
+		int notHeroesLayer = ~heroesLayer;
+		if (Physics.Linecast (start, start + translation, out hit, notHeroesLayer)) {
+			translation = (start + translation) - hit.point;
 		}
 
 		hero.transform.position += translation;
-		hero.heroAvatar.AnimateAbility (hero, HeroAnimator.AbilitySpell1H);
+	}
+
+
+	public override void OnHit (HeroManager target) {
+		return;
 	}
 }

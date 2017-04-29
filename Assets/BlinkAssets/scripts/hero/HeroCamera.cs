@@ -5,11 +5,11 @@ using UnityEngine.Networking;
 
 public class HeroCamera : NetworkBehaviour {
 
-	public float targetHeight = 0.5f;
-	public float distance = 2.8f;
+	public float targetHeight = 1.35f;
+	public float distance = 6.0f;
 	public int maxDistance = 10;
 	public float minDistance = 1.0f;
-	public float xSpeed = 350.0f;
+	public float xSpeed = 250.0f;
 	public float ySpeed = 120.0f;
 	public int yMinLimit = -40;
 	public int yMaxLimit = 80;
@@ -34,14 +34,13 @@ public class HeroCamera : NetworkBehaviour {
 			GetComponent<Rigidbody>().freezeRotation = true;
 	}
 
-	// Update is called once per frame
-	void LateUpdate () {
+	public void UpdateHeroCamera () {
 		if (!hasAuthority) return;
 
 		// If either mouse buttons are down, let them govern camera position 
 		if (movement.changeCameraAngle || movement.changeHeroAngle) {
-			x += Input.GetAxis("Mouse X") * xSpeed * 0.02f;
-			y -= Input.GetAxis("Mouse Y") * ySpeed * 0.02f;
+			x += Input.GetAxis("Mouse X") * xSpeed * Time.deltaTime;
+			y -= Input.GetAxis("Mouse Y") * ySpeed * Time.deltaTime;
 			// otherwise, ease behind the target if any of the directional keys are pressed 
 		} else if (movement.xMotion != 0 || movement.zMotion != 0) {
 			//float targetRotationAngle = target.eulerAngles.y;
@@ -76,9 +75,6 @@ public class HeroCamera : NetworkBehaviour {
 				cameraTransform.position = position;
 			}
 		}
-
-		// reset actions to initial conditions so they don't "persist" into the next frame
-		movement.resetMovement ();
 	}
 
 	public float ClampAngle(float angle, float min, float max) { 
