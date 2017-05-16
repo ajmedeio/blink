@@ -31,8 +31,8 @@ public class KeyBindings {
 		keyDownBindings.Add (KeyCode.T, MovementAction.ToggleRunWalk);
 
 		// ability bindings
-		keyUpBindings.Add (KeyCode.Alpha1, Ability.blink);
-		keyUpBindings.Add (KeyCode.Alpha2, Ability.firebolt);
+		keyUpBindings.Add (KeyCode.Alpha1, AbilityMap.blink);
+		keyUpBindings.Add (KeyCode.Alpha2, AbilityMap.firebolt);
 
 		// hero HUD bindings
 		keyDownBindings.Add (KeyCode.Return, HudAction.ToggleTyping);

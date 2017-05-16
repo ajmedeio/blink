@@ -99,7 +99,7 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 		yRotation = 0;
 	}
 
-	// msg is usually an Action object
+	// msgs are usually sent by the Controller
 	void IObserver.Notify(IObservable controller, object msg) {
 		HashSet<MovementAction> actions = msg as HashSet<MovementAction>;
 		if (actions != null) {
@@ -160,12 +160,22 @@ public class HeroMovement : NetworkBehaviour, IObserver {
 			yMovement += jump;
 		}
 
-		if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, camera.transform.eulerAngles.y, 0);
-		else transform.Rotate (0, yRotation * rotateSpeed * Time.deltaTime, 0);
-
 		//Move the avatar
-		xzMovement = transform.TransformDirection (xzMovement);
-		characterController.Move (xzMovement.normalized * xzMoveSpeed * Time.deltaTime + yMovement * Time.deltaTime);
+		if (heroManager.heroCombat.health != 0) {
+			// Move the character controller
+			if (changeHeroAngle) transform.rotation = Quaternion.Euler (0, camera.transform.eulerAngles.y, 0);
+			else transform.Rotate (0, yRotation * rotateSpeed * Time.deltaTime, 0);
+			xzMovement = transform.TransformDirection (xzMovement);
+			characterController.Move (xzMovement.normalized * xzMoveSpeed * Time.deltaTime + yMovement * Time.deltaTime);
+
+			// rotate in direction of motion
+			Transform a = transform.FindChild ("AvatarContainer");
+			if (xzMovement != Vector3.zero) {
+				if (zMotion < 0) a.rotation = Quaternion.Slerp (a.rotation, Quaternion.LookRotation (-xzMovement), 0.85f);
+				else a.rotation = Quaternion.Slerp (a.rotation, Quaternion.LookRotation (xzMovement), 0.85f);
+			} else a.rotation = Quaternion.Slerp (a.rotation, Quaternion.LookRotation (transform.forward), 1f);
+		}
+
 		isGrounded = IsGrounded();
 		heroAvatar.AnimateMovement(heroManager);
 		heroCamera.UpdateHeroCamera ();

@@ -12,11 +12,6 @@ public class HomingAbility : NetworkBehaviour {
 
 	bool initialized = false;
 
-	// Use this for initialization
-	void Start () {
-		// just wait for the insantiator to initialize everything
-	}
-
 	public void Initialize(Vector3 position, Quaternion rotation, Ability ability, HeroManager sender, HeroManager target) {
 		transform.position = position;
 		transform.rotation = rotation;
@@ -36,8 +31,8 @@ public class HomingAbility : NetworkBehaviour {
 		transform.position += targetDir.normalized * speed * Time.deltaTime;
 
 		if (targetDir.magnitude < target.characterController.bounds.extents.z) {
-			ability.OnHit (target);
-			GameObject.Destroy (gameObject);
+			ability.OnAbilityHitTarget (target);
+			NetworkServer.Destroy (this.gameObject);
 		}
 	}
 }

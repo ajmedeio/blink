@@ -10,7 +10,7 @@ public class Firebolt : Ability {
 		"Firebolt", 
 		"Throws a Firebolt at your opponent", 
 		30.0f, 50, "initialAnimation", 
-		-1.0f, 0, 0, 0, "tickAnimation", 0, "terminalAnimation") {}	
+		-1.0f, 0, 0, 0, "tickAnimation", 0, "terminalAnimation") {}
 
 	public override bool IsLegal(HeroManager hero) {
 		if (hero.heroCombat.target == null) return false;
@@ -28,22 +28,19 @@ public class Firebolt : Ability {
 		return distance < 30.0f && inLineOfSight && facingTarget;
 	}
 
-	//[Command]
 	public override void DoAbility(HeroManager hero) {
-		HeroCombat combat = hero.heroCombat;
-		Vector3 self = combat.self.characterController.bounds.center;
-		Vector3 target = combat.target.characterController.bounds.center;
-		Vector3 start = self + combat.self.transform.forward.normalized * 0.5f;
+		Vector3 center = hero.characterController.bounds.center;
+		Vector3 start = center + hero.transform.forward.normalized * 0.5f;
+		NetVector3 netStart = new NetVector3(start);
+		NetQuaternion quaternion = new NetQuaternion(Quaternion.identity);
+		string spawnableResource = "Firebolt";
 
-		GameObject firebolt = (GameObject) GameObject.Instantiate (Resources.Load("Firebolt"));
-		HomingAbility homingAbility = firebolt.GetComponent<HomingAbility>();
-		homingAbility.Initialize (start, Quaternion.identity, this, combat.self, combat.target);
-		NetworkServer.Spawn (firebolt);
+		hero.heroCombat.CmdSpawnHomingAbility(netStart, quaternion, spawnableResource, hero.gameObject, hero.heroCombat.target.gameObject);
 	}
 
 	// prolly need this to be RpcFunction
-	public override void OnHit(HeroManager target) {
-		target.heroCombat.CmdTakeDamage (this.initialDamage);
+	public override void OnAbilityHitTarget(HeroManager target) {
+		target.heroCombat.CmdAbilityHitTarget (target.gameObject, -this.initialDamage);
 	}
 
 }
