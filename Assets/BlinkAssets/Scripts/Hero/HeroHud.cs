@@ -34,13 +34,13 @@ public class HeroHud : NetworkBehaviour, IObserver {
 
 	void Start() {
         hero = GetComponent<HeroManager>();
+        heroCombat = hero.heroCombat;
 		Transform heroHudTransform = transform.FindChild("HeroHud");
 		if (!isLocalPlayer) return;
 		
         // activate self, only on local hero's screen
         heroHudTransform.gameObject.SetActive (true);
         heroHudTransform.FindChild("EventSystem").gameObject.SetActive(true);
-        
 
 		hudActionMap = new Dictionary<HudAction, VoidFunc> {
 			{HudAction.ToggleTyping, ToggleTyping}
@@ -60,18 +60,15 @@ public class HeroHud : NetworkBehaviour, IObserver {
 		targetStatusBar.SetActive (false);
 		targetName = targetStatusBar.transform.FindChild ("TargetName").GetComponent<TextMeshProUGUI>();
 		targetHealth = targetStatusBar.transform.FindChild ("HealthBar/Health").GetComponent<Image>();
-		targetHealthText = targetStatusBar.transform.FindChild ("HealthBar/HealthText").GetComponent<TextMeshProUGUI>();
-
-		hero = GetComponent<HeroManager> ();
-		heroCombat = hero.heroCombat;
-
-		// setup events
-		heroCombat.OnTargetChanged += UpdateTarget;
-		heroCombat.OnHealthChanged += UpdateHealth;
+        targetHealthText = targetStatusBar.transform.FindChild("HealthBar/HealthText").GetComponent<TextMeshProUGUI>();
 
 		heroName.text = netId.ToString();
 		health.fillAmount = (float) heroCombat.health / (float) heroCombat.maxHealth;
 		healthText.text = "Health: " + heroCombat.health + " / " + heroCombat.maxHealth;
+
+        // setup events
+        heroCombat.OnTargetChanged += UpdateTarget;
+        heroCombat.OnHealthChanged += UpdateHealth;
 	}
 
 	public void UpdateTarget(HeroManager oldTarget, HeroManager newTarget) {

@@ -10,6 +10,8 @@ public class HeroManager : NetworkBehaviour {
 	public HeroCombat heroCombat;
 	public HeroHud heroHud;
 	public CharacterController characterController;
+    public Camera camera;
+
 
 	// Use this for initialization
 	void Start () {
@@ -18,6 +20,7 @@ public class HeroManager : NetworkBehaviour {
 		heroCombat = GetComponent<HeroCombat> ();
 		heroHud = GetComponent<HeroHud> ();
 		characterController = GetComponent<CharacterController> ();
+        camera = GetComponentInChildren<Camera>(true);
 	}
 
 }

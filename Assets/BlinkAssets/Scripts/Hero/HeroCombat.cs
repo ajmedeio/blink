@@ -39,6 +39,7 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 	}
 
 	void Update() {
+        if (!hasAuthority) return;
 		if (Input.GetMouseButtonDown (0)) {
 			Ray ray = camera.ScreenPointToRay (Input.mousePosition);
 
