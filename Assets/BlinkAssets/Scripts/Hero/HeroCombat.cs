@@ -12,6 +12,7 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 	[SyncVar(hook="AbilityChanged")] public string ability = "";
 	public HeroManager self = null;
 	public HeroManager target = null;
+    private NetworkStartPosition[] spawnPoints;
 
 	// The mouse interacts with the world, I need variables to store it's state
 	private Camera camera;
@@ -26,6 +27,10 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 	public event HeroCombatEventHandler<Ability> OnAbilityChanged;
 
 	void Start () {
+        if (isLocalPlayer) { 
+            spawnPoints = FindObjectsOfType<NetworkStartPosition>();
+        }
+
 		camera = transform.GetComponentInChildren<Camera> (true);
 		self = GetComponent<HeroManager> ();
 
@@ -75,7 +80,9 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 
 			// need to reset ability, otherwise doing the same ability twice in a row won't trigger
 			// the SyncVar's dirtybit
-			ability = "";
+            // CmdDoAbilityByName(), this has to be a command, otherwise it won't run on the server
+            // which means it won't be synchronized
+			CmdDoAbilityByName("");
 		}
 	}
 
@@ -91,7 +98,7 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 
 	[Command]
 	public void CmdSpawnHomingAbility(NetVector3 vector, NetQuaternion quaternion, string spawnableResource, GameObject self, GameObject target) {
-		GameObject firebolt = (GameObject) GameObject.Instantiate (Resources.Load("Firebolt"));
+		GameObject firebolt = (GameObject) GameObject.Instantiate (Resources.Load(spawnableResource));
 		Ability ability;
 		AbilityMap.masterAbilityMap.TryGetValue (spawnableResource, out ability);
 		HomingAbility homingAbility = firebolt.GetComponent<HomingAbility>();
@@ -114,9 +121,18 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 
 	[Command]
 	private void CmdDoAbilityByName(string abilityName) {
-		string oldAbility = ability;
+		//string oldAbility = ability;
 		ability = abilityName;
 	}
+
+    public void Resurrect() {
+        Vector3 spawnPoint = Vector3.zero;
+        if (spawnPoints != null && spawnPoints.Length > 0) {
+            spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Length)].transform.position;
+        }
+        transform.position = spawnPoint;
+        CmdChangeHealthBy(maxHealth);
+    }
 
 	// msgs are usually sent by the Controller
 	void IObserver.Notify(IObservable controller, object msg) {

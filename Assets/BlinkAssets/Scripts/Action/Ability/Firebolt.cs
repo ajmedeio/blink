@@ -25,7 +25,8 @@ public class Firebolt : Ability {
 		float distance = Vector3.Distance (self, target);
 		bool inLineOfSight = Physics.Linecast (lineOfSightStart, target, out hit) && hit.transform == combat.target.transform;
 		bool facingTarget = Vector3.Angle (combat.self.transform.forward, targetDir) < 90.0f;
-		return distance < 30.0f && inLineOfSight && facingTarget;
+        bool targetDead = combat.target.heroCombat.health == 0;
+		return distance < 30.0f && inLineOfSight && facingTarget && !targetDead;
 	}
 
 	public override void DoAbility(HeroManager hero) {
