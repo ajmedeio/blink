@@ -20,11 +20,13 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 
 	// There are a lot of events related to health changes and abilities done which need to be watched
 	// by objects such as the HeroHud and the HeroAnimator
-	public delegate void HeroCombatEventHandler<T> (T oldVal, T newVal);
-	public event HeroCombatEventHandler<HeroManager> OnTargetChanged;
-	public event HeroCombatEventHandler<int> OnHealthChanged;
-	public event HeroCombatEventHandler<int> OnMaxHealthChanged;
-	public event HeroCombatEventHandler<Ability> OnAbilityChanged;
+	public delegate void HeroCombatValueChangedEventHandler<T>(T oldVal, T newVal);
+    public delegate void HeroCombatEventHandler<T>(T param);
+	public event HeroCombatValueChangedEventHandler<HeroManager> OnTargetChanged;
+	public event HeroCombatValueChangedEventHandler<int> OnHealthChanged;
+	public event HeroCombatValueChangedEventHandler<int> OnMaxHealthChanged;
+	public event HeroCombatValueChangedEventHandler<Ability> OnAbilityChanged;
+    public event HeroCombatEventHandler<GameObject> OnDeath;
 
 	void Start () {
         if (isLocalPlayer) { 
@@ -88,13 +90,15 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 	}
 
 	[TargetRpc]
-	public void TargetHit(NetworkConnection target, int amount) {
-		CmdChangeHealthBy (amount);
+	public void TargetHit(NetworkConnection target, GameObject sourceAbility) {
+        HomingAbility ability = sourceAbility.GetComponent<HomingAbility>();
+        CmdChangeHealthBy(sourceAbility, -ability.ability.initialDamage);
 	}
 
 	[Command]
-	public void CmdAbilityHitTarget(GameObject target, int amount) {
-		TargetHit (target.GetComponent<NetworkIdentity>().connectionToClient, amount);
+	public void CmdAbilityHitMe(GameObject sourceAbility) {
+        
+		TargetHit (target.GetComponent<NetworkIdentity>().connectionToClient, );
 	}
 
 	[Command]
@@ -108,10 +112,11 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 	}
 
 	[Command]
-	public void CmdChangeHealthBy(int amount) {
+	public void CmdChangeHealthBy(GameObject sourceAbility, int amount) {
 		int oldHealth = health;
 		if (health + amount <= 0) {
 			health = 0;
+            if (OnDeath != null) OnDeath(sourceAbility);
 		} else if (health + amount >= maxHealth) {
 			health = maxHealth;
 		} else {

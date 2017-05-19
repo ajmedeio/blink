@@ -39,9 +39,9 @@ public class Firebolt : Ability {
 		hero.heroCombat.CmdSpawnHomingAbility(netStart, quaternion, spawnableResource, hero.gameObject, hero.heroCombat.target.gameObject);
 	}
 
-	// prolly need this to be RpcFunction
-	public override void OnAbilityHitTarget(HeroManager target) {
-		target.heroCombat.CmdAbilityHitTarget (target.gameObject, -this.initialDamage);
+	public override void OnAbilityHitTarget(GameObject ability) {
+        HomingAbility firebolt = ability.GetComponent<HomingAbility>();
+        firebolt.target.heroCombat.CmdAbilityHitMe (firebolt.gameObject);
 	}
 
 }

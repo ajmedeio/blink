@@ -5,12 +5,12 @@ using UnityEngine.Networking;
 
 public class HomingAbility : NetworkBehaviour {
 
-	Ability ability;
-	HeroManager sender;
-	HeroManager target;
-	float speed = 25.0f;
+	public Ability ability;
+    public HeroManager sender;
+    public HeroManager target;
+    public float speed = 25.0f;
 
-	bool initialized = false;
+    public bool initialized = false;
 
 	public void Initialize(Vector3 position, Quaternion rotation, Ability ability, HeroManager sender, HeroManager target) {
 		transform.position = position;
@@ -31,7 +31,7 @@ public class HomingAbility : NetworkBehaviour {
 		transform.position += targetDir.normalized * speed * Time.deltaTime;
 
 		if (targetDir.magnitude < target.characterController.bounds.extents.z) {
-			ability.OnAbilityHitTarget (target);
+			ability.OnAbilityHitTarget (this.gameObject);
 			NetworkServer.Destroy (this.gameObject);
 		}
 	}

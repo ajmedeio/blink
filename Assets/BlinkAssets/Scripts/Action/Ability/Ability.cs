@@ -37,7 +37,7 @@ public abstract class Ability : Action {
 
 	public abstract void DoAbility (HeroManager hero);
 
-	public abstract void OnAbilityHitTarget (HeroManager target);
+	public abstract void OnAbilityHitTarget (GameObject sourceAbility);
 
 }
 
