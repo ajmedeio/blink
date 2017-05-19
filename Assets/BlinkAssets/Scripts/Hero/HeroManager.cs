@@ -21,6 +21,7 @@ public class HeroManager : NetworkBehaviour {
 		heroHud = GetComponent<HeroHud> ();
 		characterController = GetComponent<CharacterController> ();
         camera = GetComponentInChildren<Camera>(true);
+        camera.gameObject.tag = "LocalHeroCamera";
 	}
 
 }

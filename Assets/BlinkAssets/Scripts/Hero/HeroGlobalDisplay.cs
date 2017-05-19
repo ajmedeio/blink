@@ -36,7 +36,6 @@ public class HeroGlobalDisplay : NetworkBehaviour {
             health.sprite = selfHealthSprite;
             health.color = Color.white;
         }
-        camera = GetComponentInParent<HeroManager>().camera;
 
         heroName.text = netId.ToString();
         health.fillAmount = (float) heroCombat.health / (float) heroCombat.maxHealth;
@@ -45,10 +44,14 @@ public class HeroGlobalDisplay : NetworkBehaviour {
 	}
 
     void Update() {
-        if (camera != null) {
-            heroGlobalDisplayTransform.LookAt(camera.transform);
-            heroGlobalDisplayTransform.Rotate(Vector3.up, 180.0f);
+        if (camera == null) {
+            GameObject c = GameObject.FindWithTag("LocalHeroCamera");
+            if (c != null) camera = c.GetComponent<Camera>();
         }
+        if (camera == null) return;
+        
+        heroGlobalDisplayTransform.LookAt(camera.transform);
+        heroGlobalDisplayTransform.Rotate(Vector3.up, 180.0f);
     }
 
     public void UpdateHealth(int oldHealth, int newHealth) {
