@@ -6,6 +6,7 @@ public class AbilityMap {
 
 	public static readonly Ability blink = new Blink();
 	public static readonly Ability firebolt = new Firebolt();
+    public static readonly Ability underMap = new UnderMap();
 
 	public static readonly Dictionary<string, Ability> masterAbilityMap = new Dictionary<string, Ability>()
 	{

@@ -55,8 +55,8 @@ public class HeroCombat : NetworkBehaviour, IObserver {
 			}
 		}
 
-		if (transform.position.y < -50) {
-			CmdChangeHealthBy (-maxHealth);
+		if (AbilityMap.underMap.IsLegal()) {
+			CmdChangeHealthBy (AbilityMap.underMap, -maxHealth);
 		}
 	}
 
